@@ -1,5 +1,5 @@
 # coding=utf-8
-import tkinter as tk
+import Tkinter as tk
 import sys
 import signal
 from stxlib.tcp_move.basic_client import BasicClient
