@@ -1,0 +1,1639 @@
+'------------------------------------------------------------------------------
+' File:   CANDS402.lib
+' Author: Alex Leitman
+' Description : Get / Set functions of Drive, using CanOpen 
+                        
+'------------------------------------------------------------------------------
+'********************************************************************
+
+' List of C imported functions
+import_c USER_CAN_SDO_WRITE_FLOAT(byval as long,byval as long,byval as double) as long
+import_c USER_CAN_SDO_READ_FLOAT(byval as long,byval as long, as double) as long
+
+import_c USER_CAN_SDO_WRITE(byval as long,byval as long,byval as long) as long
+import_c USER_CAN_SDO_WRITE_STRING(byval as long,byval as long,byval as string) as long
+import_c USER_CAN_SDO_READ_STRING(byval as long,byval as long,byval as string) as long
+
+import_c USER_CAN_SDO_READ_ERROR(byval as long,byval as long,as long) as long
+import_c GET_RPDO_COBID(byval as long) as long '(int rpdo) as long
+import_c GET_STATUS_PDO_DADD(byval as long, as long, as long, as long) as long '(int dadd, int* cobid,int* offset, int* size) as long
+import_c USER_CAN_CNTRL_WORD_SET_RAW(byval as long, byval as long) as long'(int dadd, int iCntrlWord)
+
+import_c SDO_TIME_OUT_SET(byval as long)'int timeout
+import_c SDO_TIME_OUT_GET() as long
+
+import_c CAN_SYNC_SEPARATOR(byval as long) as long
+import_c CAN_SYNC_SEPARATOR_COB(byval as long) as long
+
+' imported in proto.pro
+import_c GET_RPDO1_RAW_DELAYED(byval as long,byval as long,byval as long) as long'(int iDadd, int iOffset, int iSize)
+import_c GET_RPDO2_RAW_DELAYED(byval as long,byval as long,byval as long) as long'(int iDadd, int iOffset, int iSize)
+import_c GET_RPDO3_RAW_DELAYED(byval as long,byval as long,byval as long) as long'(int iDadd, int iOffset, int iSize)
+import_c GET_RPDO4_RAW_DELAYED(byval as long,byval as long,byval as long) as long'(int iDadd, int iOffset, int iSize)
+import_c GET_RPDO1_RAW_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO2_RAW_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO3_RAW_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO4_RAW_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO1_RAW_DELAYED_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO2_RAW_DELAYED_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO3_RAW_DELAYED_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c GET_RPDO4_RAW_DELAYED_CNT(byval as long,byval as long,byval as long, as long) as long'(int iDadd, int iOffset, int iSize,int *iRefCntr)
+import_c USER_SEND_SYNC(byval as long)' void USER_SEND_SYNC(int i)
+import_c USER_SKIP_SYNC(byval as long) as long' INT32 USER_SKIP_SYNC(int num)
+import_c USER_NMT_COMMAND(byval as long,byval as long) as long' (INT32 lData0, INT32 lData1)
+import_c GET_EMRGNCY_RAW_CNT(byval as long,byval as long,byval as long, as long) as long '(int iDadd, int iOffset, int iSize,int *iSeqCount)
+import_c GET_NMT_RAW_CNT(byval as long,byval as long,byval as long, as long) as long '(int iDadd, int iOffset, int iSize,int *iSeqCount)
+import_c GET_HB_RAW_CNT(byval as long,byval as long,byval as long, as long) as long '(int iDadd, int iOffset, int iSize,int *iSeqCount)
+
+import_c SEND_TPDO1 (byval as long,byval as long,byval as long,byval as long) as long
+import_c SEND_TPDO2 (byval as long,byval as long,byval as long,byval as long) as long
+import_c SEND_TPDO3 (byval as long,byval as long,byval as long,byval as long) as long
+import_c SEND_TPDO4 (byval as long,byval as long,byval as long,byval as long) as long
+
+import_c  SET_CONTROL_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_STATUS_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_PCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_PFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_VCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_VFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_TCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_TDCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_CFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_DIN_RANGE_PDO_DADD(byval as long,byval as long,byval as long,byval as long,byval as long,byval as long,byval as long)
+import_c  SET_DOUT_RANGE_PDO_DADD(byval as long,byval as long,byval as long,byval as long,byval as long,byval as long,byval as long)
+' PDO data structure
+Type pdo_type
+   data[8] as long ' data. can be 1,2,4 bytes long
+   length[8] as long' len of data. can be 1-4
+End Type
+
+
+'/////////////////// GLOBAL VARIABLES AND CONSTANTS FOR HOMING FUNCTIONS /////////////////
+common shared CAN_LAST_FAULT_INDEX_0X603F as const long = 0x603F
+common shared CAN_LAST_FAULT_SUBINDEX_0X0 as const long = 0x0
+
+common shared can_slave_home_err_timeout as error "CAN_SLAVE_HOME: timeout input is invalid" 20160
+common shared can_slave_home_err_enable as error "CAN_SLAVE_HOME: Failed to enable drive" 20161
+common shared can_slave_home_err_disable as error "CAN_SLAVE_HOME: Failed to disable drive" 20162
+common shared can_slave_home_err_chgOpMode6 as error "CAN_SLAVE_HOME: Failed to set mode of operation to Homing" 20163
+common shared CAN_SLAVE_HOME_err_chgOpMode8 as error "CAN_SLAVE_HOME: Failed to set mode of operation to the original mode" 20164
+
+common shared CAN_SLAVE_HOME_err_interrupted as error "CAN_SLAVE_HOME Failed: Homing procedure was interrupted" 20165
+common shared CAN_SLAVE_HOME_err_target as error "CAN_SLAVE_HOME Failed: Homing is attained  but target is not reached" 20166
+common shared can_slave_home_err_velnotzero as error "CAN_SLAVE_HOME Failed: Homing error occurred, velocity is not 0" 20167
+common shared can_slave_home_err_velzero as error "CAN_SLAVE_HOME Failed: Homing error occurred, velocity is 0" 20168
+common shared CAN_SLAVE_HOME_err_unknown as error "CAN_SLAVE_HOME Failed: Homing failed due to unknown error" 20169
+common shared CAN_homing_parameters_err_badpar as error "HOMING_PARAMETERS Failed: Invalid Parameter Number" 20170
+common shared CAN_SLAVE_HOME_err_not_started as error "CAN_SLAVE_HOME Failed: Homing procedure did not start" 20171
+
+
+'Homing parameters constants
+common shared CAN_HOMING_METHOD as const long = 1
+common shared CAN_HOMING_OFFSET as const long = 2
+common shared CAN_FAST_HOMING_SPEED as const long = 3
+common shared CAN_SLOW_HOMING_SPEED as const long = 4
+common shared CAN_HOMING_ACCELERATION as const long = 5
+'/////////////////// END OFF GLOBAL VARIABLES AND CONSTANTS FOR HOMING FUNCTIONS /////////////////
+
+'********************************************************************
+dim shared    DS402_SDO_GENERAL_ERROR as const long =   -1
+dim shared    DS402_SDO_TIMEOUT as const long =     -2
+dim shared    DS402_SDO_HANDSHAKE_ERROR as const long = -3
+dim shared    DS402_SDO_INV_NODE_ERROR as const long =   -4
+
+'common shared CAN_SDO_WRITE_OUT_OF_RANGE  as error "SDO WRITE ERROR: Value is out of range"  20072
+common shared CAN_SDO_WRITE_INTERNAL_FAULT  as error "SDO WRITE ERROR: Internal firmware fault"  20600
+
+common shared CAN_SDO_READ_WRITE_ONLY  as error "SDO READ ERROR: Attempt to read a write-only object"  20601
+common shared CAN_SDO_WRITE_READ_ONLY  as error "SDO WRITE ERROR: Attempt to write a read-only object"  20602
+common shared CAN_WRITE_VAL_LOW  as error "SDO WRITE ERROR: Written value too low"  20603
+common shared CAN_WRITE_VAL_HIGH  as error "SDO WRITE ERROR: Written value too high"  20604
+common shared CAN_SDO_WRITE_INVALID_SIZE  as error "SDO WRITE ERROR: Invalid Bit Size"  20605
+common shared CAN_OBJECT_DOES_NOT_EXIST as error "SDO READ-WRITE ERROR: Object does not exist in the Object Dictionary"  20606
+common shared CAN_VAL_OUT_OF_RANGE as error "SDO WRITE ERROR: Written value out of range"  20607
+common shared CAN_UNDEFINED_ERROR as error "SDO READ/WRITE ERROR: Undefined error code"  20608
+common shared CAN_SDO_TIMEOUT as error "SDO Timeout"  20609
+common shared CAN_SDO_HANDSHAKE_ERROR as error "SDO Timeout"  20610
+common shared CAN_6041_NOT_MAPPED as error "Object 0x6041 is not mapped"  20611
+common shared CAN_6040_NOT_FOUND as error "Object 0x6040 not found"  20612
+common shared CAN_SDO_GENERAL_ERROR as error "SDO Timeout"  20613
+common shared CAN_SDO_INV_NODE_ERROR as error "Invalid node ddress"  20614
+common shared CAN_ERROR_5030000 as error "Toggle bit not alternated"  20615
+common shared CAN_ERROR_5040000 as error "SDO protocol timed out"  20616
+common shared CAN_ERROR_5040001 as error "Client/Server command specifier not valid or unknown"  20617
+common shared CAN_ERROR_5040002 as error "Invalid block size (Block Transfer mode only)"  20618
+common shared CAN_ERROR_5040003 as error "Invalid sequence number (Block Transfer mode only)"  20619
+common shared CAN_ERROR_5030004 as error "CRC error (Block Transfer mode only)"  20620
+common shared CAN_ERROR_5030005 as error "Out of memory"  20621
+common shared CAN_ERROR_6010000 as error "Unsupported access to an object"  20622
+common shared CAN_ERROR_6040041 as error "Object can not be mapped to the PDO"  20623
+common shared CAN_ERROR_6040042 as error "The number and length of the objects to be mapped would exceed PDO length"  20624
+common shared CAN_ERROR_6040043 as error "General parameter incompatibility reason"  20625
+common shared CAN_ERROR_6040047 as error "General internal incompatibility in the device"  20626
+common shared CAN_ERROR_6060000 as error "Object access failed due to a hardware error"  20627
+common shared CAN_ERROR_6060010 as error "Data type does not match, lengh of service parameter does not match"  20628
+common shared CAN_ERROR_6060012 as error "Data type does not match, lengh of service parameter is too high"  20629
+common shared CAN_ERROR_6060013 as error "Data type does not match, lengh of service parameter is too low"  20630
+common shared CAN_ERROR_6090011 as error "Sub-index does not exist"  20631
+common shared CAN_ERROR_6090030 as error "Value range of parameter exceeded (only for write access)"  20632
+common shared CAN_ERROR_6090036 as error "Maximum value is less than minimum value"  20633
+common shared CAN_ERROR_8000000 as error "General error"  20634
+common shared CAN_ERROR_8000020 as error "Data can not be transferred or stored to the application"  20635
+common shared CAN_ERROR_8000021 as error "Data can not be transferred or stored to the application due to local control"  20636
+common shared CAN_ERROR_8000022 as error "Data can not be transferred or stored to the application due to device state"  20637
+common shared CAN_ERROR_8000023 as error "Object Dictionary dynamic generation fails, or no Object Dictionary is present"  20638
+common shared CAN_ERROR_500004C as error "Waiting for enable; configuration cannot be executed"  20639
+common shared CAN_ERROR_500004E as error "The EnDat encoder is currently busy"  20640
+common shared CAN_ERROR_5000053 as error "The drive configuration is invalid"  20641
+common shared CAN_ERROR_5000064 as error "Failed to configure the velocity loop"  20642
+common shared CAN_ERROR_5000069 as error "The drive is currently in Hold mode"  20643
+common shared CAN_ERROR_500006A as error "The value or service is not currently available"  20644
+common shared CAN_ERROR_500006B as error "No phase found on Tamagawa encoder"  20645
+common shared CAN_ERROR_500006D as error "The requested functionality is currently in use and not available"  20646
+common shared CAN_ERROR_500006E as error "The function is not supported on the input/output"  20647
+common shared CAN_ERROR_500006F as error "The argument must be an even number"  20648
+common shared CAN_ERROR_5030060 as error "The motor peak rated current conflicts with the motor continuous"  20649
+common shared CAN_ERROR_5030061 as error "The drive peak rated current conflicts with the drive continuous"  20650
+common shared CAN_ERROR_504004F as error "Motor and encoder type mismatch"  20651
+common shared CAN_ERROR_5040050 as error "Linear motor and encoder type mismatch"  20652
+common shared CAN_ERROR_5040052 as error "The actual Harmonic current correction is out-of-range"  20653
+common shared CAN_ERROR_5040054 as error "The position encoder resolution value is invalid"  20654
+common shared CAN_ERROR_5040055 as error "The motor commutation type is invalid"  20655
+common shared CAN_ERROR_5040056 as error "The velocity limit is invalid"  20656
+common shared CAN_ERROR_5040057 as error "The drive peak rated current is invalid (sinusoidal peak)"  20657
+common shared CAN_ERROR_5040058 as error "The motor peak rated current is invalid"  20658
+common shared CAN_ERROR_5040059 as error "The drive bus voltage is invalid"  20659
+common shared CAN_ERROR_504005A as error "The motor minimum line-to-line inductance is invalid"  20660
+common shared CAN_ERROR_504005B as error "The number of motor poles is invalid"  20661
+common shared CAN_ERROR_504005C as error "The resolution in number of lines of the encoder equivalent output is invalid"  20662
+common shared CAN_ERROR_504005E as error "The homing type is invalid"  20663
+common shared CAN_ERROR_5040065 as error "Reserved (unused) homing type" 20664
+common shared CAN_ERROR_6000048 as error "The procedure is not yet completed"  20665
+common shared CAN_ERROR_6000049 as error "The drive is active"  20666
+common shared CAN_ERROR_600004A as error "The drive is inactive"  20667
+common shared CAN_ERROR_600004B as error "The drive is currently busy and cannot execute the command"  20668
+common shared CAN_ERROR_6000051 as error "Feedback is not properly defined"  20669
+common shared CAN_ERROR_600005F as error "The operation mode is invalid"  20670
+common shared CAN_ERROR_6000062 as error "Active disable is in progress"  20671
+common shared CAN_ERROR_6000067 as error "Password protected"  20672
+common shared CAN_ERROR_6000068 as error "Burning active"  20673
+common shared CAN_ERROR_600006C as error "Input/output is not supported"  20674
+common shared CAN_ERROR_6000070 as error "Saving of parameters failed"  20675
+common shared CAN_ERROR_6000071 as error "The parameter is not available for modification"  20676
+common shared CAN_ERROR_6040063 as error "The input value must be an integer"  20677
+common shared CAN_ERROR_6040066 as error "The value is invalid for the current command"  20678
+common shared CAN_ERROR_606005D as error "Flash fault occurred"  20679
+common shared CAN_ERROR_6070010 as error "SDO: Data type size does not match"  20680
+common shared CAN_PDO_TOO_LONG as error "Pdo size is longer than 8 bytes" 20681
+common shared CAN_ERROR_WRONG_OFFSET_SIZE as error "Wrong offset or size" 20682
+common shared CAN_ERROR_WRONG_PDO_NUM as error "Wrong PDO number. Can be 1 to 4" 20683
+
+
+
+common shared SDO_RETRY as long = 3
+
+'------------------------global functions--------------------------------------
+'****************************************************************************
+' Subroutine Name: CAN_SDO_WRITE
+' Description: Write an SDO 
+' Input Parameters: Slave address
+'                    SDO index
+'                    SDO sub-index
+'                    SDO size in bits
+'                    New value to be written
+' Output Parameters: None
+' Return Value: Void
+'****************************************************************************
+public sub CAN_SDO_WRITE(byval slaveaddress as long, byval index as long,  byval subindex as long,byval size_bits as long, byval new_val as long)
+  
+   dim ret as long
+   dim retry as long = SDO_RETRY
+   do  
+     ret = USER_CAN_SDO_write( slaveaddress  shl 8 + size_bits/8, index SHL 8 +subindex, new_val)
+     if ret = DS402_SDO_TIMEOUT then
+        retry = retry - 1
+     else
+        retry = 0
+     end if
+   loop while retry>0
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+   sleep 1
+end sub
+'------------------------global functions--------------------------------------
+'****************************************************************************
+' Subroutine Name: CAN_SDO_WRITE
+' Description: Write an SDO 
+' Input Parameters: Slave address
+'                    SDO index
+'                    SDO sub-index
+'                    SDO size in bits
+'                    New value to be written
+' Output Parameters: None
+' Return Value: Void
+'****************************************************************************
+public sub CAN_SDO_WRITE_STRING(byval slaveaddress as long, byval index as long,  byval subindex as long,byval new_val as string)
+  
+   dim ret as long
+   ret = USER_CAN_SDO_write_string( slaveaddress  shl 8 , index SHL 8 +subindex, new_val)
+   sleep 4
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+end sub
+'****************************************************************************
+' Subroutine Name: CAN_SDO_READ_STRING
+' Description: Read fragmened SDO from node 
+' Input Parameters: Slave address
+'                    SDO index
+'                    SDO sub-index
+'                    SDO size in bits
+'                    
+' Output Parameters: 
+' Return Value: String
+'****************************************************************************
+public function CAN_SDO_READ_STRING(byval slaveaddress as long, byval index as long,  byval subindex as long) as string
+  
+   dim ret as long
+   dim str1 as string
+   str1 = space$(1024)
+   ret = USER_CAN_SDO_READ_string( slaveaddress  shl 8 , index SHL 8 +subindex, str1)
+   sleep 4
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+   CAN_SDO_READ_STRING = str1
+end function
+'****************************************************************************
+' Function Name: CAN_SDO_READ
+' Description: Read an SDO 
+' Input Parameters:  Slave address
+'                    SDO index
+'                    SDO sub-index
+'                  
+' Output Parameters: None
+' Return Value: Value read from SDO
+'****************************************************************************     
+public function CAN_SDO_READ(byval slaveaddres as long, byval index as long,  byval subindex as long) as long
+    dim value1 as long      
+    dim ret as long
+    dim retry as long = SDO_RETRY
+    do  
+      ret = USER_CAN_SDO_read_error(slaveaddres, index SHL 8 + subindex ,value1)
+      if ret = DS402_SDO_TIMEOUT then
+        retry = retry - 1
+      else
+        retry = 0
+      end if
+   loop while retry>0
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+   sleep 1
+   CAN_SDO_READ = value1
+end function
+'****************************************************************************
+' Subroutine Name: CAN_SDO_WRITE_REAL
+' Description: Write an SDO 
+' Input Parameters: Slave address
+'                    SDO index
+'                    SDO sub-index
+'                    SDO size in bits
+'                    New value to be written
+' Output Parameters: None
+' Return Value: Void
+'****************************************************************************
+public sub CAN_SDO_WRITE_REAL(byval slaveaddress as long, byval index as long,  byval subindex as long, byval new_val as double)
+  
+   dim ret as long
+   dim retry as long = SDO_RETRY
+   dim size_bits as long = 32
+   do  
+    ret = USER_CAN_SDO_write_float( slaveaddress  shl 8 + size_bits/8, index SHL 8 +subindex, new_val)
+    if ret = DS402_SDO_TIMEOUT then
+      retry = retry - 1
+    else
+      retry = 0
+    end if
+   loop while retry>0
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+ 
+end sub
+'****************************************************************************
+' Function Name: CAN_SDO_READ_REAL
+' Description: Read an SDO 
+' Input Parameters:  Slave address
+'                    SDO index
+'                    SDO sub-index
+'                  
+' Output Parameters: None
+' Return Value: Value read from SDO
+'****************************************************************************     
+public function CAN_SDO_READ_REAL(byval slaveaddres as long, byval index as long,  byval subindex as long) as double
+    dim value1 as double      
+    dim ret as long
+    dim retry as long = SDO_RETRY
+    do  
+      ret = USER_CAN_SDO_read_float(slaveaddres, index SHL 8 + subindex ,value1)
+      if ret = DS402_SDO_TIMEOUT then
+       retry = retry - 1
+      else
+       retry = 0
+      end if
+   loop while retry>0
+   try 
+     call handle_error(ret)
+   catch else
+    throw
+   end try
+    CAN_SDO_READ_REAL = value1
+    sleep 4
+end function
+
+
+'****************************************************************************
+' Function Name: handle_error
+' Input Parameters:  errCode
+'                  
+' Output Parameters: None
+'**************************************************************************** 
+sub handle_error( byval errCode as long) 
+       
+  select case errCode
+     case 0    
+     case DS402_SDO_GENERAL_ERROR
+          throw CAN_SDO_GENERAL_ERROR
+     case DS402_SDO_TIMEOUT
+          throw CAN_SDO_TIMEOUT
+     case DS402_SDO_HANDSHAKE_ERROR
+          throw CAN_SDO_HANDSHAKE_ERROR
+   case DS402_SDO_INV_NODE_ERROR
+      throw  CAN_SDO_INV_NODE_ERROR    
+     case 0x05030000
+          throw CAN_ERROR_5030000
+     case 0x05040000
+          throw CAN_ERROR_5040000 
+     case 0x05040001
+          throw CAN_ERROR_5040001
+     case 0x05040002
+          throw CAN_ERROR_5040002
+     case 0x05040003
+          throw CAN_ERROR_5040003
+     case 0x05030004
+          throw CAN_ERROR_5030004 
+     case 0x05030005
+          throw CAN_ERROR_5030005
+     case 0x06010000
+          throw CAN_ERROR_6010000 
+     case 0x06010001
+          throw CAN_SDO_READ_WRITE_ONLY 
+     case 0x06010002
+          throw CAN_SDO_WRITE_READ_ONLY
+     case 0x06020000
+          throw CAN_OBJECT_DOES_NOT_EXIST
+     case 0x06040041
+          throw CAN_ERROR_6040041
+     case 0x06040042
+          throw CAN_ERROR_6040042
+     case 0x06040043
+          throw CAN_ERROR_6040043
+     case 0x06040047
+          throw CAN_ERROR_6040047
+     case 0x06060000
+          throw CAN_ERROR_6060000
+     case 0x06060010
+          throw CAN_ERROR_6060010
+     case 0x06060012
+          throw CAN_ERROR_6060012
+     case 0x06060013
+          throw CAN_ERROR_6060013
+     case 0x06090011
+          throw CAN_ERROR_6090011
+     case 0x06090030
+          throw CAN_ERROR_6090030
+     case 0x06090031
+          throw CAN_WRITE_VAL_HIGH
+     case 0x06090032
+          throw CAN_WRITE_VAL_LOW
+     case 0x06090036
+          throw CAN_ERROR_6090036
+     case 0x08000000
+          throw CAN_ERROR_8000000
+     case 0x08000020
+          throw CAN_ERROR_8000020
+     case 0x08000021
+          throw CAN_ERROR_8000021
+     case 0x08000022
+          throw CAN_ERROR_8000022
+     case 0x08000023
+          throw CAN_ERROR_8000023
+     case 0x0500004C
+          throw CAN_ERROR_500004C
+     case 0x0500004E
+          throw CAN_ERROR_500004E
+     case 0x05000053
+          throw CAN_ERROR_5000053
+     case 0x05000064
+          throw CAN_ERROR_5000064
+     case 0x05000069
+          throw CAN_ERROR_5000069
+     case 0x0500006A
+          throw CAN_ERROR_500006A
+     case 0x0500006B
+          throw CAN_ERROR_500006B
+     case 0x0500006D
+          throw CAN_ERROR_500006D
+     case 0x0500006E
+          throw CAN_ERROR_500006E
+     case 0x0500006F
+          throw CAN_ERROR_500006F
+     case 0x05030060
+          throw CAN_ERROR_5030060
+     case 0x05030061
+          throw CAN_ERROR_5030061
+     case 0x0504004F
+          throw CAN_ERROR_504004F
+     case 0x05040050
+          throw CAN_ERROR_5040050
+     case 0x05040052
+          throw CAN_ERROR_5040052
+     case 0x05040054
+          throw CAN_ERROR_5040054
+     case 0x05040055
+          throw CAN_ERROR_5040055
+     case 0x05040056
+          throw CAN_ERROR_5040056
+     case 0x05040057
+          throw CAN_ERROR_5040057
+     case 0x05040058
+          throw CAN_ERROR_5040058
+     case 0x05040059
+          throw CAN_ERROR_5040059
+     case 0x0504005A
+          throw CAN_ERROR_504005A
+     case 0x0504005B
+          throw CAN_ERROR_504005B
+     case 0x0504005C
+          throw CAN_ERROR_504005C
+     case 0x0504005E
+          throw CAN_ERROR_504005E
+     case 0x05040065
+          throw CAN_ERROR_5040065
+     case 0x06000048
+          throw CAN_ERROR_6000048
+     case 0x06000049
+          throw CAN_ERROR_6000049
+     case 0x0600004A
+          throw CAN_ERROR_600004A
+     case 0x0600004B
+          throw CAN_ERROR_600004B
+     case 0x06000051
+          throw CAN_ERROR_6000051
+     case 0x0600005F
+          throw CAN_ERROR_600005F
+     case 0x06000062
+          throw CAN_ERROR_6000062
+     case 0x06000067
+          throw CAN_ERROR_6000067
+     case 0x06000068
+          throw CAN_ERROR_6000068
+     case 0x0600006C
+          throw CAN_ERROR_600006C
+     case 0x06000070
+          throw CAN_ERROR_6000070
+     case 0x06000071
+          throw CAN_ERROR_6000071
+     case 0x06000072
+          throw CAN_SDO_WRITE_INTERNAL_FAULT 
+     case 0x0604004D
+          throw CAN_VAL_OUT_OF_RANGE         
+     case 0x06040063
+          throw CAN_ERROR_6040063
+     case 0x06040066
+          throw CAN_ERROR_6040066
+     case 0x0606005D
+          throw CAN_ERROR_606005D
+     case 0x06070010
+          throw CAN_ERROR_6070010
+     CASE ELSE
+          ?"SDO: Unknown error",errCode hex
+          throw CAN_UNDEFINED_ERROR
+    End Select 
+ end sub
+
+
+
+'*********************************************************************
+
+'deprecated, use CAN_CLR_FAULT
+'****************************************************************************
+public sub CLR_FAULT(ax as generic axis)
+  
+   if (CAN_SDO_READ(Ax.dadd, 0x6041, 0) band 2^3)<> 0 then
+    call CAN_SDO_WRITE(Ax.dadd, 0x6040, 0,16, 128)
+    call CAN_SDO_WRITE(Ax.dadd, 0x6040, 0,16, 0)
+   else 
+   
+   end if
+end sub
+'clear fault
+public sub CAN_CLR_FAULT(ax as generic axis)
+  call CLR_FAULT(ax)
+end sub
+'****************************************************************************
+' --------------- Rest CAN port - 
+' Needed to restore communications when no node are connected or nodes reset
+'****************************************************************************
+public sub CAN_RESET
+  dim ret as long  
+  ret = user USER_CAN_RESET_PORT(0,0,0)
+end sub
+
+'****************************************************************************
+' --------------- Reset node - 
+' input: node 
+'        0 - broadcast
+'        <>0 - reset particular node
+'****************************************************************************
+public sub NMT_RESET(byval node as long)
+  dim ret as long  
+  ret = user DS402_NMT_RESET_NODE(node,0,0)
+' if node gets reset reset master as well 
+  call CAN_RESET
+end sub
+'****************************************************************************
+' Access to DS402 control word bits object 0x6040
+' overrides control word internally set by MC firmware
+'****************************************************************************
+public sub DS402_CONTROL_WRD_RAW_SET(ax as generic axis, byval cntrword  as long)
+  dim daddr as long
+  daddr = ax.dadd 
+  if 0 <> USER_CAN_CNTRL_WORD_SET_RAW(daddr, cntrword) then
+   throw CAN_6040_NOT_FOUND
+  end if
+end sub
+
+'****************************************************************************
+' Access to DS402 status word object 0x6041
+' overrides control word internally set by MC firmware
+'****************************************************************************
+public function DS402_STATUS_RAW_GET(ax as generic axis) as long
+  dim ret as long
+  dim lDstatCOBID as long
+  dim lDstatOffs as long
+  dim lDstatLen as long
+  dim daddr as long
+  daddr = ax.dadd 
+'import_c GET_RPDO_COBID(byval as long) as long '(int rpdo) as long
+  ret = GET_STATUS_PDO_DADD(ax.dadd, lDstatCOBID, lDstatOffs, lDstatLen)
+' where is 0x6041 ?
+  if GET_RPDO_COBID(1) = lDstatCOBID then
+    DS402_STATUS_RAW_GET = GET_RPDO1_RAW_DELAYED(daddr,lDstatOffs,lDstatLen) band 0xFFFF
+    goto fin
+  end if
+  if GET_RPDO_COBID(2) = lDstatCOBID then
+    DS402_STATUS_RAW_GET = GET_RPDO2_RAW_DELAYED(daddr,lDstatOffs,lDstatLen) band 0xFFFF
+    goto fin
+  end if
+  if GET_RPDO_COBID(3) = lDstatCOBID then
+    DS402_STATUS_RAW_GET = GET_RPDO3_RAW_DELAYED(daddr,lDstatOffs,lDstatLen) band 0xFFFF
+    goto fin
+  end if
+  if GET_RPDO_COBID(4) = lDstatCOBID then
+    DS402_STATUS_RAW_GET = GET_RPDO4_RAW_DELAYED(daddr,lDstatOffs,lDstatLen) band 0xFFFF
+    goto fin
+  end if
+  throw CAN_6041_NOT_MAPPED
+fin:
+end function
+' Set the number of dummy separation messages  between MC TXPDO and SYNC
+public sub CAN_SEPARATOR(byval number as long)
+  dim i as long
+  i = CAN_SYNC_SEPARATOR(number)
+end sub
+' Set COB_ID of dummy separation messages  between MC TXPDO and SYNC
+public sub CAN_SEPARATOR_COB(byval number as long)
+  dim i as long
+  i =   CAN_SYNC_SEPARATOR_COB(number)
+end sub
+
+
+' send PDO functions
+public sub can_pdo4_write(byval addr as long, byval pdo as pdo_type)
+dim data0 as long = 0
+dim data1 as long =0
+dim pdo_len as long = 0
+dim i as long
+
+call combine_pdo(pdo, data0 , data1,pdo_len)
+' send PDO
+i = SEND_TPDO4(addr,data0,data1,pdo_len)
+end sub
+
+public sub can_pdo1_write(byval addr as long, byval pdo as pdo_type)
+dim data0 as long = 0
+dim data1 as long =0
+dim pdo_len as long = 0
+dim i as long
+
+call combine_pdo(pdo, data0 , data1,pdo_len)
+' send PDO
+i = SEND_TPDO1(addr,data0,data1,pdo_len)
+end sub
+
+public sub can_pdo2_write(byval addr as long, byval pdo as pdo_type)
+dim data0 as long = 0
+dim data1 as long =0
+dim pdo_len as long = 0
+dim i as long
+
+call combine_pdo(pdo, data0 , data1,pdo_len)
+' send PDO
+i = SEND_TPDO2(addr,data0,data1,pdo_len)
+end sub
+
+public sub can_pdo3_write(byval addr as long, byval pdo as pdo_type)
+dim data0 as long = 0
+dim data1 as long =0
+dim pdo_len as long = 0
+dim i as long
+
+call combine_pdo(pdo, data0 , data1,pdo_len)
+' send PDO
+i = SEND_TPDO3(addr,data0,data1,pdo_len)
+end sub
+
+' create 2x 32-bit words out of 0..8 PDO fields
+sub combine_pdo(pdo as pdo_type, data0 as long , data1 as long, pdo_len as long)
+dim i as long
+dim k as long
+dim pdo_bytes[8] as long
+for i=1 to 8
+  pdo_len = pdo_len + pdo->length[i]
+next
+if pdo_len > 8 or pdo_len < 0 then
+  throw CAN_PDO_TOO_LONG
+end if
+'populate bytes
+k = 1 ' index to PDO bytes
+for i=1 to 8
+  while pdo->length[i] > 0
+' separate each PDO object to bytes  
+    pdo_bytes[k]= pdo->data[i] BAND 0xff
+    pdo->length[i] = pdo->length[i] - 1
+    pdo->data[i] = pdo->data[i] SHR 8
+    k = k + 1
+  end while
+next
+for i=4 to 1 step -1
+  data0 = data0 SHL 8
+  data0 = data0 BOR pdo_bytes[i]
+next
+for i=8 to 5 step -1
+  data1 = data1 SHL 8
+  data1 = data1 BOR pdo_bytes[i]
+next
+end sub
+' read PDO from non-axis slaves. Uses non-atomic acess to the PDO buffer
+'Parameters
+' lDadd - drive address
+' lpdo - number 1..4
+' lOffset - offset in PDO from where data will be copied
+' lSize - how many bytes to copy 1..4
+' Output:
+' lRefCnt - reference counter - increments each PDOx is recieved 
+' Return Value
+' PDO data from (offset, size)
+public function CAN_PDO_Read(byval lDadd as long , byval lpdo as long,byval lOffset as long,byval lSize as long, lRefCnt as long) as long
+  if (lOffset + lSize) > 8 or lOffset<0 or lSize>4 or lSize < 0 then
+    throw CAN_ERROR_WRONG_OFFSET_SIZE
+  end if
+  if lpdo < 1 or lpdo > 4 then 
+    throw CAN_ERROR_WRONG_PDO_NUM
+  end if 
+  select case lpdo
+  case 1
+    CAN_PDO_Read = GET_RPDO1_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 2
+    CAN_PDO_Read = GET_RPDO2_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 3
+    CAN_PDO_Read = GET_RPDO3_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 4
+    CAN_PDO_Read = GET_RPDO4_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+  end select
+end function
+' read PDO from Drive (ax.dadd shall not be zero). Reads from atomic copy of PDO buffer.
+'Parameters
+' lDadd - drive address
+' lpdo - number 1..4
+' lOffset - offset in PDO from where data will be copied
+' lSize - how many bytes to copy 1..4
+' Output:
+' lRefCnt - reference counter - increments each PDOx is recieved 
+' Return Value
+' PDO data from (offset, size)
+public function CAN_PDO_Read_atomic(byval lDadd as long , byval lpdo as long,byval lOffset as long,byval lSize as long, lRefCnt as long) as long
+  if (lOffset + lSize) > 8 or lOffset<0 or lSize>4 or lSize < 0 then
+    throw CAN_ERROR_WRONG_OFFSET_SIZE
+  end if
+  if lpdo < 1 or lpdo > 4 then 
+    throw CAN_ERROR_WRONG_PDO_NUM
+  end if 
+  select case lpdo
+  case 1
+    CAN_PDO_Read_atomic = GET_RPDO1_RAW_DELAYED_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 2
+    CAN_PDO_Read_atomic = GET_RPDO2_RAW_DELAYED_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 3
+    CAN_PDO_Read_atomic = GET_RPDO3_RAW_DELAYED_CNT(lDadd,lOffset, lSize,lRefCnt )
+  case 4
+    CAN_PDO_Read_atomic = GET_RPDO4_RAW_DELAYED_CNT(lDadd,lOffset, lSize,lRefCnt )
+  end select
+end function
+' Send one (1) sync message
+public sub CAN_SYNC_Send
+USER_SEND_SYNC(1) ' send 1 sync
+end sub 
+' Stop sending of SYNC and dummy separator messages
+public sub CAN_SYNC_Stop
+dim i as long
+  i = USER_SKIP_SYNC(-1)' will skip 0xffffffff sync
+  i = CAN_SYNC_SEPARATOR(0)' stop sending dummy messages after SYNC
+end sub 
+' resume sending of SYNC and dummy separator messages
+public sub CAN_SYNC_Start
+dim i as long
+  i = USER_SKIP_SYNC(0)' 
+  i = CAN_SYNC_SEPARATOR(2)' default is 2 dummy messages after sync
+end sub 
+' send MNT message 
+public sub CAN_NMT_COMMAND_send(byval lByte0 as long, byval lByte1 as long)
+dim i as long 
+  i = USER_NMT_COMMAND(lByte0,lByte1)
+end sub
+' get NMT message stored in the RX buffer
+public function CAN_NMT_MSG_Get(byval lDadd as long , byval lOffset as long,byval lSize as long, lRefCnt as long) as long
+  if (lOffset + lSize) > 8 or lOffset<0 or lSize>4 or lSize < 0 then
+    throw CAN_ERROR_WRONG_OFFSET_SIZE
+  end if
+    CAN_NMT_MSG_Get = GET_NMT_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+end function
+' get Emergency message stored in the RX buffer
+public function CAN_EMERGENCY_MSG_Get(byval lDadd as long , byval lOffset as long,byval lSize as long, lRefCnt as long) as long
+  if (lOffset + lSize) > 8 or lOffset<0 or lSize>4 or lSize < 0 then
+    throw CAN_ERROR_WRONG_OFFSET_SIZE
+  end if
+    CAN_EMERGENCY_MSG_Get = GET_EMRGNCY_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+end function
+' get heart-beat message
+public function CAN_HB_MSG_Get(byval lDadd as long , byval lOffset as long,byval lSize as long, lRefCnt as long) as long
+  if (lOffset + lSize) > 8 or lOffset<0 or lSize>4 or lSize < 0 then
+    throw CAN_ERROR_WRONG_OFFSET_SIZE
+  end if
+    CAN_HB_MSG_Get = GET_HB_RAW_CNT(lDadd,lOffset, lSize,lRefCnt )
+end function
+
+
+
+
+
+
+'***************************************************************************************************************
+' Subroutine Name: CAN_GET_CDHD_ERROR_STRING
+' Description: This subroutine is CDHD SPECIFIC. It retrieves CDHD last fault
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Slave Address
+' Output Parameters: None
+' Return Value: String containing a description of the error
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'***************************************************************************************************************
+public function CAN_GET_CDHD_ERROR_STRING(byval slaveAddr as long) as string
+    
+    dim errCode as long
+
+    dim OVER_CURRENT                    as long = 0x2214
+    dim MOTOR_FOLDBACK                  as long = 0x2310
+    dim DRIVE_FOLDBACK                  as long = 0x2311
+    dim CURRENT_SENSORS                 as long = 0x2380 ' Current sensors offset out-of-range
+    dim MOTOR_PHASE                     as long = 0x2381
+    dim OVER_VOLTAGE                    as long = 0x3110
+    dim UNDER_VOLTAGE                   as long = 0x3120
+    dim REGEN_OVER_CURRENT              as long = 0x3180
+    dim STO                             as long = 0x3181 ' STO (safe torque off) is not connected
+    dim BUS_VOLTAGE                     as long = 0x3182 ' Bus voltage measurement circuit failure
+    dim POWER_MODULE                    as long = 0x4080 ' Integrated power module (IPM) over-temperature
+    dim CONTROL_BOARD                   as long = 0x4081 ' Control board over-temperature
+    dim DRIVE_OVER_TEMP                 as long = 0x3180 ' Drive over-temperature
+    dim MOTOR_OVER_TEMP                 as long = 0x4410
+    dim CONTORL_PLUS_VOLT               as long = 0x5111 ' Control +15V out-of-range
+    dim CONTORL_MINUS_VOLT              as long = 0x5112 ' Control -15V out-of-range
+    dim DRIVE_FIVE_VOLT                 as long = 0x5180 ' Drive 5V out-of-range
+    dim POWER_BOARD_EEPROM              as long = 0x5530 ' Power board EEPROM fault
+    dim CONTROL_BOARD_EEPROM            as long = 0x5581 ' Control digital board EEPROM fault
+    dim CAN_SUPPLY                      as long = 0x5582 ' CAN supply fault
+    dim SELF_TEST                       as long = 0x5583 ' Self test failed
+    dim FPGA_VERSION                    as long = 0x5584 ' FPGA version mismatch
+    dim PARAM_MEM_CHKSUM                as long = 0x5585 ' Parameter memory checksum failure
+    dim WRITE_FLASH_MEM                 as long = 0x5586 ' Failure writing to flash memory
+    dim WATCHDOG_FAULT                  as long = 0x6010
+    dim DRIVE_NOT_CONFIG                as long = 0x6381 ' Drive not configured
+    dim FPGA_NOT_CONFIG                 as long = 0x6581 ' FPGA configuration failure
+    dim BREAK_FAULT                     as long = 0x7110
+    dim INDEX_LINE_BREAK                as long = 0x7111 ' Index line break
+    dim VEL_LIM_EXCEED                   as long = 0x7114 ' Velocity Limit exceeded
+    dim ACC_DEC_LIMIT                   as long = 0x7115 ' Acceleration/Deceleration limit exceeded
+    dim CAN_CABLE_DISCONNECTED           as long = 0x7116
+    dim SECOND_ENC_IDX_BRK              as long = 0x7180 ' Secondary encoder (feedback) index break
+    dim SECOND_ENC_AB_BRK               as long = 0x7181 ' Secondary encoder (feedback) A/B line break
+    dim PULSE_DIR_BRK                   as long = 0x7182 ' Pulse & direction input line break
+    dim FBK_COM_ERR                     as long = 0x7380 ' Feedback communication error
+    dim NIKON_ENC_FAULT                 as long = 0x7381 ' Nikon encoder (feedback) operation fault
+    dim TAMAGAWA_INIT_FAILED            as long = 0x7382 ' Tamagawa feedback initialization failed
+    dim AB_LINE_BREAK                   as long = 0x7383 ' A/B Line break
+    dim ILLEGAL_HALLS                   as long = 0x7384 ' Illegal Halls
+    dim TAMAGAWA_BATTERY_LOW            as long = 0x7385 ' Tamagawa battery low voltage
+    dim PLL_SYNC_FAILED                 as long = 0x7386 ' PLL synchronization failed
+    dim CURR_LOOP_AUTO                  as long = 0x7780 ' Current loop autotuning failed
+    dim MOTOR_SETUP                     as long = 0x7781 ' Motor setup failed
+    dim PHASE_FIND                      as long = 0x7782 ' Phase find failed
+    dim ENC_SIM_FREQ_HIGH               as long = 0x7783 ' Encoder simulation frequency too high
+    dim ENDAT_SINE_COM                  as long = 0x7784 ' EnDat sine (feedback) communication failed
+    dim AB_RANGE                        as long = 0x7785 ' A/B out-of-range
+    dim SINE_ENC                        as long = 0x7786 ' Sine encoder quadrature
+    dim SINE_COS_CALIB                  as long = 0x7787 ' Sine/cosine calibration invalid
+    dim ENC_FIVE_OVER                   as long = 0x7788 ' Encoder (feedback) 5V over-current
+    dim SEC_ENC_FIVE_OVER               as long = 0x7789 ' Secondary encoder (feedback) 5V over-current
+    dim SENS_INIT                       as long = 0x778A ' Sensorless initialization
+    dim RES_INIT                        as long = 0x778B ' Resolver initialization failed
+    dim CAN_HEARTBEAT                   as long = 0x8130 ' CAN heartbeat lost
+    dim DRIVE_LOCKED                    as long = 0x8180 ' Drive locked
+    dim VEL_OVER_SPEED                  as long = 0x8481 ' Velocity over-speed exceeded
+    dim MAX_POS_ERROR                   as long = 0x8611 ' Maximum position error exceeded
+    dim NO_FAULT                        as long = 0x00
+    
+    'read object 0x603F to retrieve the last fault code
+    errCode = CAN_SDO_READ(slaveAddr, CAN_LAST_FAULT_INDEX_0X603F, CAN_LAST_FAULT_SUBINDEX_0X0)
+    
+    select case errCode
+
+        case OVER_CURRENT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Over Current"
+        case MOTOR_FOLDBACK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Motor Foldback"
+        case DRIVE_FOLDBACK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Drive Foldback"
+        case CURRENT_SENSORS
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Current sensors offset out-of-range"
+        case MOTOR_PHASE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Motor Phase"
+        case OVER_VOLTAGE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Over Voltage"
+        case UNDER_VOLTAGE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Under Voltage"
+        case REGEN_OVER_CURRENT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Regen Over Current"
+        case STO
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : STO (safe torque off) is not connected"
+        case BUS_VOLTAGE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Bus voltage measurement circuit failure"
+        case POWER_MODULE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Integrated power module (IPM) over-temperature"
+        case CONTROL_BOARD
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Control board over-temperature"
+        case DRIVE_OVER_TEMP
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Drive over-temperature"
+        case MOTOR_OVER_TEMP
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Motor over-temperature"
+        case CONTORL_PLUS_VOLT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Control +15V out-of-range"
+        case CONTORL_MINUS_VOLT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Control -15V out-of-range"
+        case DRIVE_FIVE_VOLT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Drive 5V out-of-range"
+        case POWER_BOARD_EEPROM
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Power board EEPROM fault"
+        case CONTROL_BOARD_EEPROM
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Control digital board EEPROM fault"
+        case CAN_SUPPLY
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : CAN supply fault"
+        case SELF_TEST
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Self test failed"
+        case FPGA_VERSION
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : FPGA version mismatch"
+        case PARAM_MEM_CHKSUM
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Parameter memory checksum failure"
+        case WRITE_FLASH_MEM
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Failure writing to flash memory"
+        case WATCHDOG_FAULT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Watchdog Fault"
+        case DRIVE_NOT_CONFIG
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Drive not configured"
+        case FPGA_NOT_CONFIG
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : FPGA configuration failure"
+        case BREAK_FAULT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Break Fault"
+        case INDEX_LINE_BREAK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Index line break"
+        case CAN_CABLE_DISCONNECTED
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : EtherCAT cable disconnected"
+        case SECOND_ENC_IDX_BRK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Secondary encoder (feedback) index break"
+        case SECOND_ENC_AB_BRK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Secondary encoder (feedback) A/B line break"
+        case PULSE_DIR_BRK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Pulse & direction input line break"
+        case FBK_COM_ERR
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Feedback communication error"
+        case NIKON_ENC_FAULT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Nikon encoder (feedback) operation fault"
+        case TAMAGAWA_INIT_FAILED
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Tamagawa feedback initialization failed"
+        case AB_LINE_BREAK
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : A/B Line break"
+        case ILLEGAL_HALLS
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Illegal Halls"
+        case TAMAGAWA_BATTERY_LOW
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Tamagawa battery low voltage"
+        case PLL_SYNC_FAILED
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : PLL synchronization failed"
+        case CURR_LOOP_AUTO
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Current loop autotuning failed"
+        case MOTOR_SETUP
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Motor setup failed"
+        case PHASE_FIND
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Phase find failed"
+        case ENC_SIM_FREQ_HIGH
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Encoder simulation frequency too high"
+        case ENDAT_SINE_COM
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : EnDat sine (feedback) communication failed"
+        case AB_RANGE
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : A/B out-of-range"
+        case SINE_ENC
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Sine encoder quadrature"
+        case SINE_COS_CALIB
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Sine/cosine calibration invalid"
+        case ENC_FIVE_OVER
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Encoder (feedback) 5V over-current"
+        case SEC_ENC_FIVE_OVER
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Secondary encoder (feedback) 5V over-current"
+        case SENS_INIT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Sensorless initialization"
+        case RES_INIT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Resolver initialization failed"
+        case CAN_HEARTBEAT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : CAN heartbeat lost"
+        case DRIVE_LOCKED
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Drive locked"
+        case VEL_OVER_SPEED
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Velocity over-speed exceeded"
+        case MAX_POS_ERROR
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Maximum position error exceeded"
+        case ACC_DEC_LIMIT
+            CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Acceleration/Deceleration limit exceeded"
+    case VEL_LIM_EXCEED  
+      CAN_GET_CDHD_ERROR_STRING = "drive fault in slave " + str$(slaveAddr) + " : Velocity Limit exceeded"
+        case NO_FAULT
+            CAN_GET_CDHD_ERROR_STRING = "No drive fault in slave " + str$(slaveAddr)
+        case else
+            CAN_GET_CDHD_ERROR_STRING =  "drive fault number " +str$(errCode) +" in slave " + str$(slaveAddr) + " : description N/A"
+        
+    end select
+    
+end function
+
+
+
+'****************************************************************************
+' Function Name: CAN_CDHD_GET_ERROR
+' Description: copied from  CAN_SLAVE_GET_ERROR . Returns the error code saved in the drive in case of an internal error
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Axis
+' Output Parameters: None
+' Return Value:    Error code
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'****************************************************************************
+public function CAN_CDHD_GET_ERROR(Ax as generic axis) as string
+
+  dim err as long = 0
+
+  err = CAN_SDO_READ(Ax.DAdd, 0x603F, 0)
+  CAN_CDHD_GET_ERROR = CAN_GET_CDHD_ERROR_STRING(ax.dadd)
+
+end function
+
+
+
+
+public function CAN_IS_PDO(byval Addr as long , byval obj as long , byval subobj as long) as long
+  CAN_IS_PDO=0 ' dummy 
+end function
+
+
+
+
+public function CAN_PDO_READ_DUMMY(byval slaveaddres as long, byval index as long, byval subindex as long) as long
+  CAN_PDO_READ_DUMMY = 0 ' dummy
+end function
+
+
+public sub CAN_PDO_WRITE_DUMMY(byval slaveaddress as long, byval index as long, byval subindex as long, byval new_val as long)
+  dim ret as long
+  ret = 0 ' dummy
+end sub
+
+
+
+public function CAN_SDO_READ_DOUBLE(byval slaveaddres as long, byval index as long,  byval subindex as long) as double
+   CAN_SDO_READ_DOUBLE = CAN_SDO_READ_REAL(slaveaddres,index, subindex) 
+end function
+
+
+public sub CAN_SDO_WRITE_DOUBLE(byval slaveaddress as long, byval index as long,  byval subindex as long, byval new_val as double)
+  call CAN_SDO_WRITE_REAL(slaveaddress,index,subindex,new_val)
+end sub
+
+
+'/////////////////////////
+
+'****************************************************************************
+' Subroutine Name: CAN_SLAVE_SET_HOMING_PARAMETERS
+' Description: Set homing parameter in a certain slave
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Axis
+'                    Parameter Number
+'                    Parameter Value
+' Output Parameters: None
+' Return Value:    None
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'****************************************************************************
+public sub CAN_SLAVE_SET_HOMING_PARAMETERS(ax as generic axis, byval paramNum as long, byval paramVal as long)
+
+  dim slaveAddr as long
+  dim ret as long
+
+  slaveAddr = ax.dadd
+
+  Select Case paramNum
+
+    CASE CAN_HOMING_METHOD
+      call CAN_SDO_WRITE(slaveAddr, 0x6098, 0, 8, paramVal) 'set homing method
+      'if 0<> SDO_WRITE(slaveAddr, 0x6098, 0, 8, paramVal) then 'set homing method
+      '   print "Cannot set homing method to ";paramVal
+      'throw error
+      'end if
+
+    CASE CAN_HOMING_OFFSET
+      call CAN_SDO_WRITE(slaveAddr, 0x607C, 0, 32, paramVal)  'set homing offset
+      'if 0<> SDO_WRITE(slaveAddr, 0x607C, 0, 32, paramVal) then 'set homing offset
+      '   print "Cannot set homing offset to ";paramVal
+      'throw error
+      'end if
+
+    CASE CAN_FAST_HOMING_SPEED
+      call CAN_SDO_WRITE(slaveAddr, 0x6099, 1, 32, paramVal)  'set fast homing speed
+      'if 0<> SDO_WRITE(slaveAddr, Homing_Speed_6099h, 1, 32, paramVal) then 'set fast homing speed
+      '   print "Cannot set fast homing speed to ";paramVal
+      'throw error
+      'end if
+
+    CASE CAN_SLOW_HOMING_SPEED
+      call CAN_SDO_WRITE(slaveAddr, 0x6099, 2, 32, paramVal)  'set slow homing speed
+      'if 0<> SDO_WRITE(slaveAddr, 0x6099, 2, 32, paramVal) then 'set slow homing speed
+      '   print "Cannot set slow homing speed to ";paramVal
+      'throw error
+      'end if
+
+    CASE CAN_HOMING_ACCELERATION
+      call CAN_SDO_WRITE(slaveAddr, 0x609A, 0, 32, paramVal)  'set homing acceleration/deceleration
+      'if 0<> SDO_WRITE(slaveAddr, 0x609A, 0, 32, paramVal) then 'set homing acceleration/deceleration
+      'print "Cannot set homing acceleration/deceleration to ";paramVal
+      'throw error
+      'end if
+
+    CASE ELSE
+      throw CAN_homing_parameters_err_badpar
+      
+  End Select
+
+end sub
+
+
+
+
+'****************************************************************************
+' Function Name: CAN_SLAVE_GET_HOMING_PARAMETERS
+' Description: Get homing parameter from a certain slave
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Axis
+'                    Parameter Number
+' Output Parameters: None
+' Return Value:    Requested axis' homing parameter value
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'****************************************************************************
+public function CAN_SLAVE_GET_HOMING_PARAMETERS(ax as generic axis, byval paramNum as long) as long
+
+  dim slaveAddr as long
+
+  slaveAddr = ax.dadd
+
+  Select Case paramNum
+
+    CASE CAN_HOMING_METHOD
+      CAN_SLAVE_GET_HOMING_PARAMETERS = CAN_SDO_READ(slaveAddr, 0x6098, 0) 'get homing method
+
+    CASE CAN_HOMING_OFFSET
+      CAN_SLAVE_GET_HOMING_PARAMETERS = CAN_SDO_READ(slaveAddr, 0x607C, 0) 'get homing offset
+
+    CASE CAN_FAST_HOMING_SPEED
+      CAN_SLAVE_GET_HOMING_PARAMETERS = CAN_SDO_READ(slaveAddr, 0x6099, 1) 'get fast homing speed
+
+    CASE CAN_SLOW_HOMING_SPEED
+      CAN_SLAVE_GET_HOMING_PARAMETERS = CAN_SDO_READ(slaveAddr, 0x6099, 2) 'get slow homing speed
+
+    CASE CAN_HOMING_ACCELERATION
+      CAN_SLAVE_GET_HOMING_PARAMETERS = CAN_SDO_READ(slaveAddr, 0x609A, 0) 'get homing acceleration/deceleration
+
+    CASE ELSE
+      throw CAN_homing_parameters_err_badpar
+      ' instead of THROW
+      'CAN_SLAVE_GET_HOMING_PARAMETERS = some error number
+
+  End Select
+
+end function
+'////////////////////////////
+
+'//////////////////////////
+
+
+'****************************************************************************
+' Subroutine Name: CAN_SLAVE_HOME_DS402
+' Description: This subroutine is DS 402 protocol conforming 
+'      This subroutine is used to start HOMING procedure in a certain slave drive
+'      **** INVOKE THIS SUBROUTINE ONLY AFTER TASK HAS ATTACHED TO AXIS ****
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Axis
+'                    homingTimeout - Maximum time to try homing procedure (Milliseconds)
+' Output Parameters: None
+' Return Value:    None
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+' 
+' statusword value while homing:
+' bit: 13  12  10
+'       0   0   0  -  In progress
+'       0   0   1  -  Homing procedure is interrupted or not started
+'       0   1   0  -  Homing is attained  but target is not reached
+'       0   1   1  -  Homing procedure is completed successfully
+'       1   0   0  -  Homing error occurred , velocity is not 0
+'       1   0   1  -  Homing error occurred ,  velocity is 0
+'       1   1   X  -  reserved
+'****************************************************************************
+public sub CAN_SLAVE_HOME_DS402(ax as generic axis, byval homingTimeout as long)
+
+  dim slaveAddr as long
+  dim currModOp as long  ' current drive's mode of operation
+  dim homingNotDone as long = true
+  dim driveEnabled as long ' flag that indicates the state of the drive once sub is invoked
+  ' homing status
+  dim statusWordMask as long = 2^13 BOR 2^12 BOR 2^10
+  dim inProgress as long = 0 ' in progress
+  dim intrNotstrt as long = 2^10  ' procedure is interrupted or not started
+  dim attTarNotRech as long = 2^12  ' Homing is attained  but target is not reached
+  dim homeok as long = 2^12 BOR 2^10  ' homing process is complete
+  dim homeErrMov as long = 2^13 ' Homing error occurred , velocity is not 0
+  dim homeErrStop as long = 2^13 BOR 2^10 ' Homing error occurred , velocity is 0
+
+  dim throwEx as long = 0
+
+  dim counter as long = 0  '  a counter used to count 10 iterations of sleep when enabling/disabling axis
+  dim ret as long
+
+  'sanity check over input
+  if homingTimeout < 1 or homingTimeout > 300000 then
+    throw can_slave_home_err_timeout
+    'goto END_SUB
+  end if
+
+  slaveAddr = ax.dadd
+
+  ' check drive's status: enabled/disabled. Save it (in order to
+  ' return the drive in the same status), and disable axis
+  if ax.en = true then
+    driveEnabled = true
+    ax.en = false
+    counter = 0
+    while true = ax.en AND counter < 10
+      sleep 10
+      counter = counter + 1
+    end while
+    if ax.en = true then
+      throw can_slave_home_err_disable 'failed to disable axis
+    end if
+  end if
+
+  'get current mode of operation, and save it
+  currModOp = CAN_SDO_READ(slaveAddr, 0x6060, 0)
+
+  'set mode of operation = 6 - homing mode
+  call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, 6)  
+  sleep 200
+  'make sure changing opmode was successful. if not - throw an exception
+  if CAN_SDO_READ(slaveAddr,0x6060,0) <> 6 then
+    throw can_slave_home_err_chgOpMode6 'home_drive_err_chgOpMode6
+  end if
+
+  'enter axis into following mode
+  ax.fmode = 2
+
+  call CAN_CLR_FAULT(ax)
+  'enable drive
+  ax.en = true
+'  call DS402_CONTROL_WRD_RAW_SET(ax,6)
+'  sleep 50
+'  call DS402_CONTROL_WRD_RAW_SET(ax,7)
+'  sleep 50
+'  call DS402_CONTROL_WRD_RAW_SET(ax,0xf)
+'  sleep 50
+'  call DS402_CONTROL_WRD_RAW_SET(ax,0x1f)
+  sleep 50
+  counter = 0
+  while false = ax.en AND counter < 10
+    sleep 10
+    counter = counter + 1
+  end while
+  if ax.en = false then
+    call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, currModOp)
+    throw can_slave_home_err_enable 'failed to enable axis
+  end if
+
+  'homing procedure starts automatically
+  'read status word while homing is not done, and no error occurred
+  inProgress = 1
+  counter = sys.clock ' sample current system clock (in ticks)
+  while homingNotDone AND (homingTimeout > sys.clock - counter)
+
+    ret = CAN_SDO_READ(slaveAddr, 0x6041, 0) BAND statusWordMask
+
+    Select Case ret
+
+      CASE inProgress
+        sleep 10
+      Case intrNotstrt
+        'throw CAN_SLAVE_HOME_err_interrupted
+        print "Homing: intrNotstrt"
+        sleep 10
+      Case attTarNotRech
+        print "Homing: attTarNotRech"
+        sleep 10
+        'throw CAN_SLAVE_HOME_err_target
+      Case homeok
+        print "Homing: OK"
+        homingNotDone = false
+        inProgress = 0
+      Case homeErrMov
+        print "Homing: homeErrMov"
+        homingNotDone = false
+        throwEx = 1
+        'throw can_slave_home_err_velnotzero
+      Case homeErrStop
+        print "Homing: homeErrStop"
+        homingNotDone = false
+        sleep 10
+        throwEx = 2
+        'throw can_slave_home_err_velzero
+
+    End Select
+
+  end while
+
+  if 1 = inProgress then
+    'SHOULD BE REPLACED WITH A THROW ???
+    print "Homing timed out before procedure was complete"
+  end if
+
+  'disable drive
+  ax.en = false
+  sleep 500
+  counter = 0
+  while (CAN_SDO_READ(slaveAddr, 0x6041, 0) band 2^2) <> 0 AND counter < 10 '  while true = ax.en AND counter < 10
+    sleep 100
+    counter = counter + 1
+  end while
+  sleep 100
+  if (CAN_SDO_READ(slaveAddr, 0x6041, 0) band 2^2) <> 0 then 'if ax.en = true then
+    throw can_slave_home_err_disable 'failed to disable axis
+  end if
+
+
+  'set mode of operation to original mode
+  'call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, currModOp)
+
+  '**************************************************************
+  '           SLAVE IS SET TO cyclic synchronous position mode !!
+  '      Slave isn't set to the original opmode it was in at
+  '      the beginning of the routine
+  '**************************************************************
+  call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, 8)
+  'if CAN_SDO_READ(slaveAddr,0x6060,0) <> currModOp then
+  if CAN_SDO_READ(slaveAddr, 0x6060,0) <> 8 then
+    throw CAN_SLAVE_HOME_err_chgOpMode8
+  end if
+  ax.fmode = 0
+
+  if 1 = throwEx then
+    throw can_slave_home_err_velnotzero
+  end if
+  if 2 = throwEx then
+    throw can_slave_home_err_velzero
+  end if
+
+
+  'if drive was enabled when HOME_DRIVE was invoked, enable drive
+  if 0 <> driveEnabled then
+    ax.en = true
+    counter = 0
+    while false = ax.en AND counter < 10
+      sleep 10
+      counter = counter + 1
+    end while
+    if ax.en = false then
+      throw can_slave_home_err_enable 'failed to enable axis
+    end if
+  end if
+
+
+
+end sub
+
+
+'****************************************************************************
+' Function Name: Slave_diagnostic
+' Description:
+' Author: Yonathan Klein 
+' Input Parameters: Slave address
+' Output Parameters: String for diagnostic of the drive
+' Return Value: None
+' Algorithm: 
+' Global Variables Used:
+' Revisions:
+'****************************************************************************
+
+
+public Function Slave_diagnostic_can(byval slave_address as long) as string 
+
+  dim error_string as string =""
+  dim i as long = 1 
+  dim description as string = ""
+  dim error_hex as long 
+  dim fault_check as string
+  dim fault_check_string as string = ""
+    dim Slave_diagnostic_inter as string = "No Error$$$Black"
+  dim warning_str as string = ""
+  
+  error_string = CAN_GET_CDHD_ERROR_STRING(slave_address)
+  
+  fault_check = bin$(CAN_SDO_READ(slave_address,0X6041,0))
+  'fault_check_string = str$(fault_check)
+  if mid$(fault_check,12,1) = "0" then
+  
+    Slave_diagnostic_inter =  "No Error$$$Black"
+    
+  else  
+  
+    if mid$(error_string,i,2) = "No"  then
+      
+      Slave_diagnostic_inter =  "No Error$$$Black" 
+    
+    else
+    
+      error_hex = CAN_SDO_READ(Slave_address, 0x603f,0)        
+      
+      while mid$(error_string,i,1) <> ":"           
+        i = i + 1 
+      end while
+      i = i+1
+      
+      description = description + mid$(error_string,i,40)
+      
+      Slave_diagnostic_inter =  "Error$" + HEX$(error_hex) + "$" + description + "$Red" 
+    end if
+  end if 
+
+    warning_str = drive_warning_can(slave_address)
+   slave_diagnostic_can = Slave_diagnostic_inter + CHR$(13) + CHR$(10) + warning_str
+end function
+
+
+'****************************************************************************
+' Function Name: Drive_warning_can
+' Description:
+' Author: Yonathan Klein 
+' Input Parameters: Slave address
+' Output Parameters: String for diagnostic of the drive
+' Return Value: None
+' Algorithm: 
+' Global Variables Used:
+' Revisions:
+'****************************************************************************
+
+public Function Drive_warning_can(byval slave_address as long) as string 
+
+  dim warning_string as long 
+  dim warning_string_2 as long
+
+  dim STO_Warning                                           as long = 1
+  dim Drive_Foldback_Warning                                as long = 2
+  dim Motor_Foldback_Warning                                as long = 4
+  dim Under_Voltage                                         as long = 8
+  dim Power_Stage_Over_Temperature                          as long = 16
+  dim Motor_Over_Temperature                                as long = 32
+  dim Control_Board_Over_Temperature                        as long = 256
+  dim Phase_Find_Required                                   as long = 512
+  dim PLL_No_Synchronized                                   as long = 1024 
+  dim Hardware_Positive_Limit_Switch                        as long = 16384 
+  dim Hardware_Negative_Limit_Switch                        as long = 32768
+  dim Hardware_Positive_and_Negative                        as long = 65536
+  dim Software_Positive_Limit_Switch                        as long = 131072
+  dim Software_Negative_Limit_Switch                        as long = 262144
+  dim Software_Limit_Switches_are                           as long = 524288
+  dim HIPERFACE_Encoder_Resolution                          as long = 1048576 
+  dim Tamagawa_Battery_Low_Voltage                          as long = 2097152 
+  dim EnDat_Encoder_Resolution                              as long = 8388608
+  dim PFB_Backup_No_Read                                    as long = 16777216
+  dim Offset_and_or_Gain                                  as long = 33554432
+  dim Bus_AC_Supply_Line                                    as long = 1073741824
+  dim Regen_Resistor_Overload                               as long = 2 
+  dim Encoder_Warning                                       as long = 4
+  dim Realtime_Overload_Warning                             as long = 8
+  dim Cannot_Use_SFBTYPE_1                                  as long = 16
+  dim Integrated_Power_Module                               as long = 32
+  dim PDO_Packet_Is_Not                                     as long = 64 
+  dim Online_LMJR_Estimation_Active                         as long = 128
+  dim PDO_Packet_Is_Not_In                                  as long = 256 
+  dim Data_in_RPDO_is_Out_of_Range                          as long = 512 
+  dim Data_Cannot_Be_Written                                as long = 1024
+  dim Command_is_Toward                                     as long = 2048
+  dim Command_is_Toward_2                                   as long = 4096
+  dim CAN_Communication                                     as long = 8192 
+
+  if can_sdo_read(slave_address,0x1000,0) = 131474 then
+    warning_string = CAN_SDO_READ(slave_address, 0x2011, 0)
+  else 
+    warning_string = CAN_SDO_READ(slave_address, 0x2011, 1)
+
+  end if
+
+  select case warning_string
+  
+    case STO_Warning 
+      Drive_warning_can = "Warninng$1$STO_Warning$orange"
+    case Drive_Foldback_Warning  
+      Drive_warning_can = "Warning$2$Drive_Foldback_Warning$orange"
+    case Motor_Foldback_Warning
+      Drive_warning_can = "warning$3$Motor_Foldback_Warning$orange"
+    case Under_Voltage
+      Drive_warning_can = "Warning$4$Under_Voltage$orange"
+    case Power_Stage_Over_Temperature
+      Drive_warning_can = "Warning$5$Power_Stage_Over_Temperature$orange"
+    case Motor_Over_Temperature
+      Drive_warning_can = "Warning$6$Motor_Over_Temperature$orange"
+    case Control_Board_Over_Temperature
+      Drive_warning_can ="Warning$9$Control_Board_Over_Temperature$orange"
+    case Phase_Find_Required
+      Drive_warning_can = "Warning$10$Phase_Find_Required$orange"
+    case PLL_No_Synchronized
+      Drive_warning_can = "Warning$11$PLL_No_Synchronized$orange"
+    case Hardware_Positive_Limit_Switch
+      Drive_warning_can = "Warning$15$Hardware_Positive_Limit_Switch_Open$orange"
+    case Hardware_Negative_Limit_Switch
+      Drive_warning_can = "Warning$16$Hardware_Negative_Limit_Switch_is_Open$orange"
+    case Hardware_Positive_and_Negative
+      Drive_warning_can = "Warning$17$Hardware_Positive_and_Negative_Limit_Switches_are_Open$orange"
+    case Software_Positive_Limit_Switch
+      Drive_warning_can = "Warning$18$Software_Positive_Limit_Switch_is_Tripped$orange"
+    case Software_Negative_Limit_Switch
+      Drive_warning_can = "Warning$19$Software_Negative_Limit_Switch_is_Tripped$orange"
+    case  Software_Limit_Switches_are
+      Drive_warning_can = "Warning$20$Software_Limit_Switches_are_Tripped$orange"
+    case HIPERFACE_Encoder_Resolution
+      Drive_warning_can = "Warning$21$HIPERFACE_Encoder_Resolution_Mismatch$orange"
+    case Tamagawa_Battery_Low_Voltage
+      Drive_warning_can = "Warning$22$Tamagawa_Battery_Low_Voltage$orange"
+    case EnDat_Encoder_Resolution 
+      Drive_warning_can ="Warning$24$EnDat_Encoder_Resolution_Mismatch$orange"
+    case PFB_Backup_No_Read
+      Drive_warning_can = "Warning$25$PFB_Backup_No_Read$orange"
+    case Offset_and_or_Gain
+      Drive_warning_can = "Warning$27$Offset_and_or_Gain_Adjustment_Values_Detected_After_SININIT$orange"
+    case Bus_AC_Supply_Line 
+      Drive_warning_can = "Warning$32$Bus_AC_Supply_Line_Disconnected$orange"
+
+    case 0x0
+      if can_sdo_read(slave_address,0x1000,0) = 131474 then
+      
+        Drive_warning_can = "No Warning$$$black"
+      
+      else 
+      
+         warning_string_2 = CAN_SDO_READ(slave_address, 0x2011, 2)
+      end if 
+      
+      select case warning_string_2
+      
+        case Regen_Resistor_Overload
+          Drive_warning_can = "Warning$34$Regen_Resistor_Overload$orange"
+        case Encoder_Warning 
+          Drive_warning_can = "Warning$35$Encoder_Warning$orange"
+        case Realtime_Overload_Warning 
+          Drive_warning_can = "Warning$36$Realtime_Overload_Warning$orange"
+        case Cannot_Use_SFBTYPE_1
+          Drive_warning_can = "Warning$37$Cannot_Use_SFBTYPE_1_with_Analog_OPMODE$orange"
+        case Integrated_Power_Module
+          Drive_warning_can = "Warning$38$Integrated_Power_Module_Over_Temperature$orange"
+        case PDO_Packet_Is_Not 
+          Drive_warning_can = "Warning$39$PDO_Packet_Is_Not_In_The_Expected_Length_too_short$orange"
+        case Online_LMJR_Estimation_Active
+          Drive_warning_can = "Warning$40$Online_LMJR_Estimation_Active$orange"
+        case PDO_Packet_Is_Not_In
+          Drive_warning_can = "Warning$41$PDO_Packet_Is_Not_In_The_Expected_Length_too_long$orange"
+        case Data_in_RPDO_is_Out_of_Range
+          Drive_warning_can = "Warning$42$Data_in_RPDO_is_Out_of_Range$orange"
+        case Data_Cannot_Be_Written 
+          Drive_warning_can = "Warning$43$Data_Cannot_Be_Written_When_Drive_is_Enabled$orange"
+        case Command_is_Toward
+          Drive_warning_can = "Warning$44$Command_is_Toward_Positive_Software_Limit$orange"
+        case Command_is_Toward_2
+          Drive_warning_can = "Warning$45$Command_is_Toward_Negative_Software_Limit$orange"
+        case CAN_Communication
+          Drive_warning_can = "Warning$46$CAN_Communication_entered_passive_state$orange"
+        case 0x0
+          Drive_warning_can = "No Warning$$$black"
+      end select 
+  end select 
+
+end function
+
+'****************************************************************************
+' Subroutine Name: Clear_Drive
+' Description: This subroutine is StepIM SPECIFIC.
+
+' Called From: 
+' Author: Yonathan Klein
+' Input Parameters: Drive address
+' Output Parameters: None
+' Return Value:    None
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'****************************************************************************
+
+public sub Clear_Drive(byval drvAddress as long) 
+
+
+      
+    SET_CONTROL_PDO_DADD(drvAddress,0,0,0)
+      SET_STATUS_PDO_DADD(drvAddress,0,0,0)
+      SET_PCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_PFB_PDO_DADD(drvAddress,0,0,0)
+      SET_VCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_VFB_PDO_DADD(drvAddress,0,0,0)
+      SET_TCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_TDCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_CFB_PDO_DADD(drvAddress,0,0,0)
+      SET_DOUT_RANGE_PDO_DADD(drvAddress,0,0,0,0,0,0)
+      SET_DIN_RANGE_PDO_DADD(drvAddress,0,0,0,0,0,0)
+      
+End sub
+
+
+
+
+
