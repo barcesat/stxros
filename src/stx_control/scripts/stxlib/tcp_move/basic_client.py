@@ -47,8 +47,11 @@ class BasicClient:
         self.write(msg)
     
     def getInput(self, input_index):
+	#rospy.loginfo("getinput")
         msg = "getInput({},{})".format(self.msgCounter, input_index)
         self.write(msg)
+	return self.recv()
+
 
     def grJoints(self, groupId, j1, j2, j3, j4, j5, vCruise):
         msg = "grMove5dof({}, {}, {}, {}, {}, {}, {}, {})".format(self.msgCounter, groupId, j1, j2, j3, j4, j5, vCruise)
@@ -61,6 +64,9 @@ class BasicClient:
     def setAxisHome(self, jointNum):
         msg = "axMoveHome({}, {})".format(self.msgCounter, jointNum)
         self.write(msg)
+    #def grPfb(self, groupId):
+	#msg = "grPfb({}, {})".format(self.msgCounter, groupId)
+	#return self.write(msg)
 
     def recv(self):
         retVal = self.client.read_until(b"\n").decode('ascii')
@@ -69,7 +75,7 @@ class BasicClient:
     def write(self, str):
         self.msgCounter += 1
         self.client.write((str + "\n").encode('ascii'))
-        logging.info("BASIC Client sent: %s", str)
-        # retval = self.client.read_until(b"\n").decode('ascii')
+        #logging.info("BASIC Client sent: %s", str)
+        #retval = self.client.read_until(b"\n").decode('ascii')
         # logging.info("Basic Client receive: %s", retval)
-        # return retval
+        #return retval

@@ -437,9 +437,12 @@ if __name__ == '__main__':
 
         t_MC_response = threading.Thread(target=start_listening_thread)
         t_MC_response.start()
-	rospy.loginfo("read IO: ")
-	rospy.loginfo(tn.getInput(2))
-	rospy.loginfo(tn.recv())
+	#rospy.loginfo("read IO: ")
+	#rospy.loginfo(tn.grPfb(65))
+	#rospy.loginfo("getinput")
+	#rospy.loginfo(tn.getInput(2))
+	#rospy.loginfo("finished")
+	#rospy.loginfo(tn.recv())
 
         server_arm = StxControllerServerArm()
         server_gripper = StxControllerServerGripper()

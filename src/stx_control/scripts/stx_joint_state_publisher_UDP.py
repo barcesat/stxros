@@ -51,9 +51,9 @@ if __name__ == '__main__':
             msg.effort = list(map(lambda axis_data: axis_data.get_tFb(), axes_data))
             msg.header.stamp = rospy.Time.now()
 
-            rospy.loginfo(msg.position)
-            rospy.loginfo(msg.velocity)
-            rospy.loginfo(msg.effort)
+            # rospy.loginfo(msg.position)
+            # rospy.loginfo(msg.velocity)
+            # rospy.loginfo(msg.effort)
             # rospy.loginfo(list(map(lambda axis_data: axis_data.get_pFb(), axes_data)))
             pub.publish(msg)
             rate.sleep()

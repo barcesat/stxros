@@ -5,6 +5,7 @@ import signal
 from stxlib.tcp_move.basic_client import BasicClient
 
 MC_IP = '90.0.0.1'
+MC_IP = '132.68.161.26'
 
 
 class MoveAxis(object):
