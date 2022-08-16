@@ -47,11 +47,10 @@ class BasicClient:
         self.write(msg)
     
     def getInput(self, input_index):
-	#rospy.loginfo("getinput")
+	    #rospy.loginfo("getinput")
         msg = "getInput({},{})".format(self.msgCounter, input_index)
         self.write(msg)
-	return self.recv()
-
+        return self.recv()
 
     def grJoints(self, groupId, j1, j2, j3, j4, j5, vCruise):
         msg = "grMove5dof({}, {}, {}, {}, {}, {}, {}, {})".format(self.msgCounter, groupId, j1, j2, j3, j4, j5, vCruise)

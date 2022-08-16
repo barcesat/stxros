@@ -1,5 +1,11 @@
 # coding=utf-8
-import Tkinter as tk
+
+try:
+    # for Python2
+    import Tkinter as tk
+except ImportError:
+    # for Python3
+    import tkinter as tk
 import sys
 import signal
 from stxlib.tcp_move.basic_client import BasicClient
@@ -48,33 +54,33 @@ class Graphics(object):
         self.e3.grid(row=1, column=4, padx=10)
 
         tk.Button(master,
-                  text='Start homing', command=self.submit_command_settings).grid(row=1,
-                                                                                  column=5,
-                                                                                  padx=10,
-                                                                                  sticky=tk.E)
+            text='Start homing', command=self.submit_command_settings).grid(row=1,
+            column=5,
+            padx=10,
+            sticky=tk.E)
 
         tk.Button(master,
-                  text='     <--    ', command=self.move_neg).grid(row=3,
-                                                                   column=0,
-                                                                   sticky=tk.E,
-                                                                   pady=30)
+            text='     <--    ', command=self.move_neg).grid(row=3,
+            column=0,
+            sticky=tk.E,
+            pady=30)
         tk.Button(master,
-                  text='    -->     ', command=self.move_pos).grid(row=3,
-                                                                   column=2,
-                                                                   sticky=tk.W,
-                                                                   pady=30)
+            text='    -->     ', command=self.move_pos).grid(row=3,
+            column=2,
+            sticky=tk.W,
+            pady=30)
 
         tk.Button(master,
-                  text='Set joint!', command=self.set_joint).grid(row=3,
-                                                                  column=4,
-                                                                  sticky=tk.W,
-                                                                  pady=30)
+            text='Set joint!', command=self.set_joint).grid(row=3,
+            column=4,
+            sticky=tk.W,
+            pady=30)
         tk.Button(master,
-                  text='Quit',
-                  command=quit_and_disconnect).grid(row=3,
-                                                    column=5,
-                                                    sticky=tk.W,
-                                                    pady=4)
+            text='Quit',
+            command=quit_and_disconnect).grid(row=3,
+            column=5,
+            sticky=tk.W,
+             pady=4)
 
         tk.mainloop()
 
