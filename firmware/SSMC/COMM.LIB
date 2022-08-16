@@ -1,0 +1,165 @@
+'------------------------------------------------------------------------------
+' File:        communication library
+' Purpose:     Send responce back to the host over TCP/IP socked descriptor
+' Version:     1.00
+' Author:      <MyFullName>
+' Description:
+' History:     YYYY-MM-DD  <MyShortCut>  V1.00
+'              Created
+'------------------------------------------------------------------------------
+
+' module global "constants"
+dim shared bDebug as long = 0 
+common shared lCommandRecved as ulong
+common shared lCommandExecuted as ulong
+public sub DebugOn
+  bDebug = 1
+end sub
+public sub DebugOff
+  bDebug = 0
+end sub
+public Function IsDebug as long
+  IsDebug = bDebug
+end function  
+' module global variables
+' Main execution function, responce is sent by executed function
+' Return value is not empty of VESXECUTE returns data, it is assumed that returned data needs to re-evaluated with ExecuteResponce
+public function  Execute(byval lLocalSock as long, byval sCommand as string, lSeqNum as long) as string
+ dim s1 as string
+ dim lErrNum as long
+ dim lErrPos as long
+ dim lDtaPos as long
+ Execute = ""
+ s1 = vesexecute(gInsertLocalSocket(sCommand,lLocalSock))
+ lSeqNum = val(mid$(sCommand,instr(sCommand,"(")+1,255))
+ lErrPos = instr(s1,"E:Error:")
+ lDtaPos = instr(s1,"D:")
+ lErrNum = val(mid$(s1,lErrPos+8,255))
+ if lErrPos then
+   sendResponceString(lLocalSock,lSeqNum,str$(lErrNum))
+ else
+   Execute = mid$(s1,lDtaPos+2,255)  
+ end if
+ 
+end function
+
+' Execution function return error code + result
+public function  ExecuteResponce(byval lLocalSock as long, byval sCommand as string) as string
+ dim s1 as string
+ dim lErrNum as long
+ dim lErrPos as long
+ dim lDtaPos as long
+ ExecuteResponce = ""
+ if bDebug then
+  print scope,sCommand
+ end if 
+ s1 = vesexecute(sCommand)
+ lErrPos = instr(s1,"E:Error:")
+ lDtaPos = instr(s1,"D:")
+ if lErrPos then
+    lErrNum = val(mid$(s1,lErrPos+8,255))
+    ExecuteResponce = str$(lErrNum)
+ else
+    ExecuteResponce= "0 "+mid$(s1,lDtaPos+2,255)
+ end if
+ if bDebug then
+  print scope,ExecuteResponce
+ end if 
+ if bDebug then
+  print scope,s1
+ end if 
+end function
+
+' send response, only error code
+public sub sendResponce(byval filedesc as long, byval seqNum as long, byval ErrorCode as long)
+  try 
+    if filedesc = 0 then
+      print seqNum,ErrorCode
+    else
+      print #filedesc, seqNum;" ";ErrorCode
+    end if   
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+' send response, only error code
+public sub sendResponceStr(byval filedesc as long, byval seqNum as long, byval sResp as string)
+  if bDebug then
+    print scope,filedesc,seqNum,sResp
+  end if 
+  try 
+    if filedesc = 0 then
+      print seqNum,sResp
+    else
+      print #filedesc, seqNum;" ";sResp
+    end if   
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+' send response, error code and real value
+public sub sendResponceDouble(byval filedesc as long, byval seqNum as long, byval ErrorCode as long,byval dVal as double)
+  try 
+    if filedesc = 0 then
+      print seqNum,ErrorCode,dval
+    else
+      print #filedesc, seqNum;" ";ErrorCode;" ";dval
+    end if   
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+' send response, error code and integet value
+public sub sendResponceLong(byval filedesc as long, byval seqNum as long, byval ErrorCode as long,byval lVal as double)
+  try 
+    if filedesc = 0 then
+      print seqNum,ErrorCode,lval
+    else
+      print #filedesc, seqNum;" ";ErrorCode;" ";lval
+    end if   
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+' send Deferred response immidiate responce
+public sub sendDeferredResponce(byval filedesc as long,byval seqNum as long, byval ErrorCode as long)
+  try
+    if filedesc = 0 then
+      print "!"seqNum,ErrorCode
+    else
+      print #filedesc,"!"seqNum;" ";ErrorCode
+    end if  
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+' send response, error code and integet value
+public sub sendResponceString(byval filedesc as long, byval seqNum as long, byval sVal as string)
+  try 
+    if filedesc = 0 then
+      print seqNum,sVal
+    else
+      print #filedesc, seqNum;" ";sVal
+    end if   
+  catch else
+    print "File descriptor #";filedesc;" is not valid"
+    throw
+    ' nothing to do if error
+  end try  
+end sub
+'this function is used to insert socket descriptor as first param pefore passing string to VESEXecute
+function gInsertLocalSocket(sExeLine as string, byval sLocalSocket as long) as string
+  dim lBracketPos as long
+  lBracketPos = instr(sExeLine,"(")
+  gInsertLocalSocket = left$(sExeLine,lBracketPos)+str$(sLocalSocket)+","+mid$(sExeLine,lBracketPos+1,256)
+end function

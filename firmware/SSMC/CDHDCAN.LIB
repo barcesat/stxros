@@ -1,0 +1,420 @@
+  
+'------------------------------------------------------------------------------
+' File:   cdhdcan.lib
+' Author: Alex Leitman
+' Description : Mapping of DS402 Drive process data to Motion Cotroller RPDO/TPDO 
+'
+'------------------------------------------------------------------------------
+
+'----------- local variables -------------------
+'-----------------------------------------------
+'------------------------------------------------------------------------------
+import_c  SET_CONTROL_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_STATUS_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_PCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_PFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_VCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_ADDTCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_VFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_TCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_TDCMD_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_CFB_PDO_DADD(byval as long,byval as long,byval as long,byval as long)
+import_c  SET_DIN_RANGE_PDO_DADD(byval as long,byval as long,byval as long,byval as long,byval as long,byval as long,byval as long)
+import_c  SET_DOUT_RANGE_PDO_DADD(byval as long,byval as long,byval as long,byval as long,byval as long,byval as long,byval as long)
+
+import_c SDO_TIME_OUT_SET(byval as long)'int timeout
+import_c SDO_TIME_OUT_GET() as long
+
+'===================================================================
+' Confuguration of drive:
+'RPDO #1 :0x6040.0-control word, 0x607A.0-pcmd , 0x6071.0-tcmd
+'RPDO #2 :0x60FE.1 - Digital Ouputs
+'RPDO #3 :---
+'RPDO #4 :---
+'=================================================================== 
+'TPDO #1 :0x6041.0-status word ,0x60640.0-pfb 0x60780.0-tfb
+'TPDO #2 :0x60fd.0 - digila inputs, 0x6074.0 - Torque Demand
+'TPDO #3 :---
+'TPDO #4 :---
+'===================================================================
+public sub CDHDMapPDO(byval drvAddress as long)
+dim RPD01_COB as const long = 0x200
+dim RPD02_COB as const long = 0x300
+dim RPD03_COB as const long = 0x400
+dim RPD04_COB as const long = 0x500
+dim TPD01_COB as const long = 0x180
+dim TPD02_COB as const long = 0x280
+dim TPD03_COB as const long = 0x380
+dim TPD04_COB as const long = 0x480
+'erase MC papping
+      SET_CONTROL_PDO_DADD(drvAddress,0,0,0)
+      SET_STATUS_PDO_DADD(drvAddress,0,0,0)
+      SET_PCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_PFB_PDO_DADD(drvAddress,0,0,0)
+      SET_VCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_ADDTCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_VFB_PDO_DADD(drvAddress,0,0,0)
+      SET_TCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_TDCMD_PDO_DADD(drvAddress,0,0,0)
+      SET_CFB_PDO_DADD(drvAddress,0,0,0)
+      SET_DOUT_RANGE_PDO_DADD(drvAddress,0,0,0,0,0,0)
+      SET_DIN_RANGE_PDO_DADD(drvAddress,0,0,0,0,0,0)
+' CDHD probably(?) can accept SYNC just after its RXPDO
+      call CAN_SEPARATOR(0)      
+'----------------------- Drive RPDO part -----------------------------------
+      '***************** drive dynamic mapping of RPDO #1 ******************
+      'disable RPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1400,01,32,0x80000000 + drvAddress + RPD01_COB)       
+'set number of elements in RPDO #1 to zero - required
+      call CAN_SDO_WRITE(drvAddress,0x1600,00,8,0) 
+'-----------------------------------------------------------------------------------
+'control word
+    call CAN_SDO_WRITE(drvAddress,0x1600,01,32,0x60400010) 'control word
+      SET_CONTROL_PDO_DADD(drvAddress,RPD01_COB , 0 , 2) '16 bit
+'-----------------------------------------------------------------------------------
+'pcmd
+      call CAN_SDO_WRITE(drvAddress,0x1600,02,32,0x607A0020) 'pcmd 
+      SET_PCMD_PDO_DADD(drvAddress,RPD01_COB,2,4)   '32 bit
+'-----------------------------------------------------------------------------------
+'tcmd
+      call CAN_SDO_WRITE(drvAddress,0x1600,03,32,0x60710010) 'TCMD
+      SET_TCMD_PDO_DADD(drvAddress,RPD01_COB,6, 2)
+'taddcmd -- if you need Additive torque, comment-out 2 lines above an uncomment 2 lines below
+'      call CAN_SDO_WRITE(drvAddress,0x1600,03,32,0x60b20010) 'SET_ADDTCMD_PDO_DADD
+'      SET_ADDTCMD_PDO_DADD(drvAddress,RPD01_COB,6, 2)
+'-----------------------------------------------------------------------------------
+      'update number of elements in RPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1600,00,8,3)
+      'enable RPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1400,01,32,RPD01_COB + drvAddress)
+       '***************** drive dynamic mapping of RPDO #2 ******************
+      'disable RPDO #2 - required
+      call CAN_SDO_WRITE(drvAddress,0x1401,01,32,0x80000000 + drvAddress + RPD02_COB)       
+     'update number of elements in RPDO #2 - required
+      call CAN_SDO_WRITE(drvAddress,0x1601,00,8,0)
+'-----------------------------------------------------------------------------------
+' Digital outputs    
+     'update number of elements in RPDO #2 - required
+      call CAN_SDO_WRITE(drvAddress,0x1601,01,32,0x60FE0120) 'outputs
+      call CAN_SDO_WRITE(drvAddress,0x60FE,02,32,0xffffffff) 'outputs mask
+
+      SET_DOUT_RANGE_PDO_DADD(drvAddress,RPD02_COB , 0 , 4,10000+drvAddress*100,11,16) '16 bit, 11 outputs in upper 16-bits
+      call CAN_SDO_WRITE(drvAddress,0x1601,00,8,1)
+      call CAN_SDO_WRITE(drvAddress,0x1401,01,32,drvAddress + RPD02_COB)       
+'-----------------------------------------------------------------------------------
+ 
+      '***************** drive dynamic mapping of RPDO #3 ******************
+      'disable RPDO #3 - required
+       call CAN_SDO_WRITE(drvAddress,0x1402,01,32, 0x80000000 + drvAddress + RPD03_COB)
+      '***************** drive dynamic mapping of RPDO #4 ******************
+      'disable RPDO #4 - required
+       call CAN_SDO_WRITE(drvAddress,0x1403,01,32, 0x80000000 + drvAddress + RPD04_COB)
+'----------------------- Drive TPDO part -----------------------------------
+
+      '***************** drive dynamic mapping of TPDO #1 ******************
+      'disable TPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1800,01,32, 0x80000000 + drvAddress + TPD01_COB)
+      'set number of elements in TPDO #1 to zero - required
+      call CAN_SDO_WRITE(drvAddress,0x1A00,00,8,0)
+      'set TPDO #1 mapping
+'-----------------------------------------------------------------------------------
+'status word
+      call CAN_SDO_WRITE(drvAddress,0x1A00,01,32,0x60410010) 'status word 
+      SET_STATUS_PDO_DADD(drvAddress,TPD01_COB,0, 2)
+'-----------------------------------------------------------------------------------
+'pfb
+      call CAN_SDO_WRITE(drvAddress,0x1A00,02,32,0x60640020) 'pfb
+      SET_PFB_PDO_DADD(drvAddress,TPD01_COB , 2 , 4)
+'-----------------------------------------------------------------------------------
+'current feedback
+      call CAN_SDO_WRITE(drvAddress,0x1A00,03,32,0x60780010) 'tfb Current Actual Value
+      SET_CFB_PDO_DADD(drvAddress,TPD01_COB , 6 , 2)
+'-----------------------------------------------------------------------------------
+      'update number of elements in TPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1A00,00,8, 3)
+      'enable TPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1800,01,32,TPD01_COB + drvAddress)
+      call CAN_SDO_WRITE(drvAddress,0x1800,02,8,1) ' enable cyclic transmission of PDO
+
+      '***************** drive dynamic mapping of TPDO #2 ******************
+      'disable TPDO #2 - required
+      call CAN_SDO_WRITE(drvAddress,0x1801,01,32, 0x80000000 + drvAddress + TPD02_COB) 
+     'set number of elements in TPDO #1 to zero - required
+      call CAN_SDO_WRITE(drvAddress,0x1A01,00,8,0)
+      'set TPDO #1 mapping
+'-----------------------------------------------------------------------------------
+'digital inputs
+      call CAN_SDO_WRITE(drvAddress,0x1A01,01,32,0x60FD0020) 'digital inputs
+      SET_DIN_RANGE_PDO_DADD(drvAddress,TPD02_COB,0, 4,10000+drvAddress*100,31,0)' 32 inputs in all bits
+'-----------------------------------------------------------------------------------
+'Torque demand
+      call CAN_SDO_WRITE(drvAddress,0x1A01,02,32,0x60740010) 'toque demand that drive produces to itself
+      SET_TDCMD_PDO_DADD(drvAddress,TPD02_COB , 4 , 2)
+'-----------------------------------------------------------------------------------
+      'update number of elements in TPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1A01,00,8, 2)
+      'enable TPDO #1 - required
+      call CAN_SDO_WRITE(drvAddress,0x1801,01,32,TPD02_COB + drvAddress)
+      call CAN_SDO_WRITE(drvAddress,0x1801,02,8,1) ' enable cyclic transmission of PDO
+
+      '***************** drive dynamic mapping of TPDO #3 ******************
+      'disable TPDO #3 - required
+      call CAN_SDO_WRITE(drvAddress,0x1802,01,32, 0x80000000 + drvAddress + TPD03_COB) 
+      '***************** drive dynamic mapping of TPDO #4 ******************
+      'disable TPDO #4 - required
+      call CAN_SDO_WRITE(drvAddress,0x1803,01,32, 0x80000000 + drvAddress + TPD04_COB) 
+end sub
+' --- Get Drive Version version ------------
+public function CDHD_Ver(byval node as long) as string
+  CDHD_Ver = can_sdo_read_string(node,0x100a,0)
+end function
+
+
+'/////////////////// HOMING FUNCTIONS  /////////////////
+
+'****************************************************************************
+' Subroutine Name: CAN_SLAVE_HOME
+' Description: This subroutine is CDHD SPECIFIC.
+'     This subroutine is used to start HOMING procedure in a certain CDHD drive
+'      **** INVOKE THIS SUBROUTINE ONLY AFTER TASK HAS ATTACHED TO AXIS ****
+' Called From: 
+' Author: Nir Geller 
+' Input Parameters: Axis
+'                   homingTimeout - Maximum time to try homing procedure (Milliseconds)
+' Output Parameters: None
+' Return Value:    None
+' Algorithm: 
+' Global Variables Used: None
+' Revisions:
+'****************************************************************************
+public sub CAN_SLAVE_HOME(ax as generic axis, byval homingTimeout as long)
+
+  dim slaveAddr as long
+  dim currModOp as long  ' current drive's mode of operation
+  dim homingNotDone as long = true
+  dim driveEnabled as long ' flag that indicates the state of the drive one sub is invoked
+  dim IsMapped_0x6060 as long = 0' flag that indicates if object 0x6060 is mapped to a PDO
+  dim IsMapped_0x6061 as long = 0' flag that indicates if object 0x6060 is mapped to a PDO
+  ' homing status
+
+  dim inProgress as long = 0 ' in progress
+  dim throw1 as long = 0
+
+  dim counter as long = 0  '  a counter used to count 10 iterations of sleep when enabling/disabling axis
+  dim retVal as long
+
+  ' Find if objects 0x6060 and 0x6061 are mapped to a PDO
+  if CAN_IS_PDO(ax.dadd, 0x6060, 0) then
+    IsMapped_0x6060 = 1
+  end if
+  if CAN_IS_PDO(ax.dadd, 0x6061, 0) then
+    IsMapped_0x6061 = 1
+  end if
+
+  'sanity check over input
+  if (homingTimeout < 1) or (homingTimeout > 300000) then
+    throw can_slave_home_err_timeout
+  end if
+
+  slaveAddr = ax.dadd
+    
+  ' check drive's status: enabled/disabled. Save it (in order to
+  ' return the drive in the same status), and disable axis
+  if ax.en = true then
+    driveEnabled = true
+    ax.en = false
+    counter = 0
+    while true = ax.en AND counter < 10
+      sleep 10
+      counter = counter + 1
+    end while
+    if ax.en = true then
+      throw can_slave_home_err_disable 'failed to disable axis
+    end if
+  end if
+    
+    'get current mode of operation, and save it
+  if IsMapped_0x6061 then
+    currModOp = CAN_PDO_READ_DUMMY(slaveAddr, 0x6061, 0)
+  else
+    currModOp = CAN_SDO_READ(slaveAddr, 0x6061, 0)
+  end if
+  
+  
+  'set mode of operation = 6 - homing mode
+  if IsMapped_0x6060 then
+    call CAN_PDO_WRITE_DUMMY(slaveAddr, 0x6060, 0, 6)
+  else
+    call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, 6)
+  end if
+
+  'make sure changing opmode was successful. if not - throw an exception  
+  retVal = 0
+  counter = 0
+  while (retVal <> 6) and (counter < 10)
+  
+    if IsMapped_0x6061 then
+      retVal = CAN_PDO_READ_DUMMY(slaveAddr, 0x6061, 0)
+    else
+      retVal = CAN_SDO_READ(slaveAddr, 0x6061, 0)
+    end if
+    
+    sleep 100
+    
+  end while
+  
+  if retVal <> 6 then
+    throw can_slave_home_err_chgOpMode6 'home_drive_err_chgOpMode6
+  end if
+  
+  
+  'enter axis into following mode
+  ax.fmode = 2
+
+  'enable drive
+  ax.en = true
+  counter = 0
+  while false = ax.en AND counter < 10
+    sleep 10
+    counter = counter + 1
+  end while
+  if ax.en = false then
+
+    ' Couldn't enable drive. Restore previous opmode and throw an exception
+    if IsMapped_0x6060 then
+      call CAN_PDO_WRITE_DUMMY(slaveAddr, 0x6060, 0, currModOp)
+    else
+      call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, currModOp)
+    end if
+
+    throw can_slave_home_err_enable 'failed to enable axis
+
+  end if
+
+  
+  ' Poll bit 13 in status word to determine whether CDHD started homing procedure
+  ' If bit 13 is set and object 0x2090 holds 0, homing didn't start due to wrong conditions
+  retVal = 1
+  counter = 0
+  while (retVal = 1) and (counter < 10)
+        
+    if ((CAN_SDO_READ(slaveAddr, 0x6041, 0) band 2^13) = 0) and \
+        (CAN_SDO_READ(slaveAddr, 0x2090, 0) > 0) then
+        
+      retVal = 0
+      
+    else
+    
+      retVal = 1
+      counter = counter + 1
+      sleep 50
+
+    end if
+    
+  end while
+  
+  if retVal = 1 then
+    throw CAN_SLAVE_HOME_err_not_started
+  end if
+  
+  
+    'homing procedure started
+    'read status word while homing is not done, and no error occurred
+    inProgress = 1
+    counter = sys.clock ' sample current system clock (in ticks)
+  while homingNotDone AND (homingTimeout > sys.clock - counter)
+    
+    'retVal = CAN_PDO_READ_DUMMY(slaveAddr, 0X2090, 0)  '  Sample homing status   '  Uncomment when 2090 is mapped to a PDO
+    retVal = CAN_SDO_READ(slaveAddr, 0x2090, 0)  '  Sample homing status   '  Remove when 2090 is mapped to a PDO
+    Select Case retVal
+
+      Case 1 to 18 'inProgress  ' Yevgeny 25/06/13 : changed from 20 to 18 according to CDHD changes  (Itai) 
+        sleep 10
+        'print "homing slave ";slaveAddr;". state: ";retVal
+
+      Case 19 ' homeok  ' Yevgeny 25/06/13 : changed from 21 to 19 according to CDHD changes  (Itai) 
+        inProgress = 0
+        homingNotDone = false
+        'print "homing slave ";slaveAddr;". state: ";retVal;" success!"
+
+      Case 20 'homeErrStop ' Yevgeny 25/06/13 : changed from 22 to 20 according to CDHD changes  (Itai) 
+        throw1 = 1
+        'print "homing slave ";slaveAddr;". state: ";retVal;" ERROR ! throwing!"
+
+    End Select
+
+  end while
+    
+  if 1 = inProgress then
+    'SHOULD BE REPLACED WITH A THROW ???
+    'retVal = CAN_PDO_READ_DUMMY(slaveAddr, 0X2090, 0)  '  Sample homing status   '  Uncomment when 2090 is implemented in PDO
+    retVal = CAN_SDO_READ(slaveAddr, 0x2090, 0)  '  Sample homing status   '  Remove when 2090 is implemented in PDO
+    print "Homing interrupted or timed out before procedure was complete. Homing state is ";retVal
+  end if
+    
+    'disable drive
+    ax.en = false
+    sleep 500
+    counter = 0
+    while (CAN_SDO_READ(slaveAddr, 0x6041, 0) band 2^2) <> 0 AND counter < 10 '  while true = ax.en AND counter < 10
+        sleep 100
+        counter = counter + 1
+    end while
+    sleep 100
+    if (CAN_SDO_READ(slaveAddr, 0x6041, 0) band 2^2) <> 0 then 'if ax.en = true then
+        throw can_slave_home_err_disable 'failed to disable axis
+    end if
+
+    
+    'set mode of operation to original mode
+  if IsMapped_0x6060 then
+    call CAN_PDO_WRITE_DUMMY(slaveAddr, 0x6060, 0, currModOp)
+  else
+    call CAN_SDO_WRITE(slaveAddr, 0x6060, 0, 8, currModOp)
+  end if
+
+  ' make sure restoring opmode was successful. if not - throw an exception
+  retVal = 0
+  counter = 0
+  while (retVal <> currModOp) and (counter < 10)
+  
+    if IsMapped_0x6061 then
+      retVal = CAN_PDO_READ_DUMMY(slaveAddr, 0x6061, 0)
+    else
+      retVal = CAN_SDO_READ(slaveAddr, 0x6061, 0)
+    end if
+    
+    sleep 100
+    
+  end while
+  
+  if retVal <> currModOp then
+    throw CAN_SLAVE_HOME_err_chgOpMode8 'home_drive_err_chgOpMode6
+  end if
+  
+
+  ax.fmode = 0
+
+  if 1 = throw1 then
+    throw CAN_SLAVE_HOME_err_unknown
+  end if
+  
+    'if drive was enabled when HOME_DRIVE was invoked, enable drive
+    if 0 <> driveEnabled then
+        ax.en = true
+        counter = 0
+        while false = ax.en AND counter < 10
+            sleep 10
+            counter = counter + 1
+        end while
+        if ax.en = false then
+            throw can_slave_home_err_enable 'failed to enable axis
+        end if
+    end if
+    
+end sub
+
+
+
+
+

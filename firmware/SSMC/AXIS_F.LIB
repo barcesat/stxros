@@ -1,0 +1,509 @@
+'------------------------------------------------------------------------------
+' File:        axis_f.lib
+' Purpose:     Implementation of all functions that deal with axes parameters 
+' Version:     1.00
+' Author:      <MyFullName>
+' Description:
+' History:     YYYY-MM-DD  <MyShortCut>  V1.00
+'              Created
+'------------------------------------------------------------------------------
+'import comm.lib
+COMMON SHARED semMove AS SEMAPHORE
+' common variables and flags for axis, group and homing tasks
+common shared axSeq as long               ' host sequence number
+common shared axRef as long               ' axis or group id
+common shared axRespFileDesc as long = 0  ' file descriptor for responce 
+' axis move variables and flags
+common shared axTarget as double          ' new target
+common shared axVel as double             ' new velocity
+common shared axAbs as long               ' abs(1) or relative(0) movement
+common shared axNewTarget as long=0       ' axis start move flasg
+' home move variables and flags
+common shared axNewHome as long = 0       ' start homing flag, axis is in axRef
+' group move variables and flags
+common shared grTarget[32] as double      ' new target for group
+common shared grVel as double             ' new velocity for group
+common shared grAbs  as long              ' abs(1) or relative(0) movement
+common shared grMoveType  as long         ' 2 - move, 3 - moveS
+common shared grNewTarget as long = 0     ' group start move flasg
+common shared dValVelocity_glob as double=0
+dim shared GROUP_ID_START as const long = 65
+dim shared doubleQ as string = chr$(0x22)
+'---------------- Public functions ------------------------------
+
+public sub axMoveHome(byval lSocket as long ,byval seqNum as long, byval  lAxisRef as long)
+  axHome(lSocket,seqNum ,lAxisRef)
+  sendResponce(lSocket,seqNum,0)
+end sub
+public sub grMoveAbsolute(byval lSocket as long ,byval seqNum as long, byval  lAxisRef as long, byval dXPos as double, byval dYPos as double, byval dZPos as double,byval dValVelocity as double)
+  grMove(lSocket,seqNum ,lAxisRef,dXpos,dYpos,dZpos,dValVelocity,1)
+end sub
+public sub grMove4dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dValVelocity as double)
+  grMove4df(lSocket,seqNum,lgrRef,dj1,dj2,dj3,dj4,dValVelocity,1,2) ' simple move
+end sub
+
+public sub grMove5dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,byval dj5 as double, \
+byval dValVelocity as double)
+  dValVelocity_glob = dValVelocity 
+  grMove5df(lSocket,seqNum,lgrRef,dj1,dj2,dj3,dj4,dj5,dValVelocity,1,2) ' simple move
+end sub
+
+public sub gripperToggle(byval lSocket as long ,byval seqNum as long, byval gripper_state as long)
+  sys.dout[10003] = gripper_state
+  sendResponce(lSocket,seqNum,0)
+end sub
+
+' get input value
+public sub getInput(byval lSocket as long, byval seqNum as long,byval input_index as long)
+  dim lError as long = 0
+  dim retVal as long = 0
+  try 
+    retVal = sys.din[10000 + input_index]
+  catch else
+    lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+  sendResponceLong(lSocket,seqNum,lError,retVal)
+end sub
+
+public sub grMoveS4dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dValVelocity as double)
+  grMove4df(lSocket,seqNum,lgrRef,dj1,dj2,dj3,dj4,dValVelocity,1,3) '  moveS
+end sub
+
+public sub grMovePnt6dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dj5 as double, byval dj6 as double,\
+byval dValVelocity as double)
+  grMove6df(lSocket,seqNum,lgrRef ,dj1,dj2,dj3,dj4,dj5,dj6,dValVelocity,1,2) ' simple cartesian point move
+end sub
+public sub grMoveSPnt6dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dj5 as double, byval dj6 as double,\
+byval dValVelocity as double)
+  grMove6df(lSocket,seqNum,lgrRef ,dj1,dj2,dj3,dj4,dj5,dj6,dValVelocity,1,3) '  moveS cartesian point
+end sub
+public sub grMoveJnt6dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dj5 as double, byval dj6 as double,\
+byval dValVelocity as double)
+  grMove6df(lSocket,seqNum,lgrRef ,dj1,dj2,dj3,dj4,dj5,dj6,dValVelocity,1,4) ' simple move joint
+end sub
+public sub grMoveSJnt6dof(byval lSocket as long ,byval seqNum as long, byval  lgrRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dj5 as double, byval dj6 as double,\
+byval dValVelocity as double)
+  grMove6df(lSocket,seqNum,lgrRef ,dj1,dj2,dj3,dj4,dj5,dj6,dValVelocity,1,5) '  moveS joint
+end sub
+
+
+public sub axMoveAbsolute(byval lSocket as long ,byval seqNum as long, byval  lAxisRef as long, byval dValPosition as double, byval dValVelocity as double)
+  axMove(lSocket,seqNum ,lAxisRef,dValPosition,dValVelocity,1)
+end sub
+public sub axMoveRelative(byval lSocket as long ,byval seqNum as long, byval  lAxisRef as long, byval dValPosition as double, byval dValVelocity as double)
+  axMove(lSocket,seqNum ,lAxisRef,dValPosition,dValVelocity,0)
+end sub
+' Enable axis
+public sub axEnable(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval  lEna as long)
+  dim lError as long
+  try 
+    systemaxis(lAxisRef).en = lEna
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponce(lSocket,seqNum,lError)
+end sub
+' Enable Groupt
+public sub grEnable(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval  lEna as long)
+  dim lError as long
+  try 
+    systemgroup(lAxisRef).en = lEna
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponce(lSocket,seqNum,lError)
+end sub
+' Resume
+public sub ProceedResume(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long
+  dim gAx as generic axis
+  dim gGr as generic group
+  try 
+    if lAxisRef >= GROUP_ID_START then
+      gGr = systemgroup(lAxisRef)
+      proceed gGr proceedtype = CONTINUE
+    else
+      gAx = systemaxis(lAxisRef)
+      proceed gAx proceedtype = CONTINUE
+    end if  
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponce(lSocket,seqNum,lError)
+end sub
+
+' Clean Motion
+public sub ProceedClean(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long
+  dim gAx as generic axis
+  dim gGr as generic group
+  try 
+    if lAxisRef >= GROUP_ID_START then
+      gGr = systemgroup(lAxisRef)
+      proceed gGr proceedtype = CLEARMOTION
+    else
+      gAx = systemaxis(lAxisRef)
+      proceed gAx proceedtype = CLEARMOTION
+    end if  
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponce(lSocket,seqNum,lError)
+end sub
+
+' Stop axis/group
+public sub eStop(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long
+  dim gAx as generic axis
+  dim gGr as generic group
+  try 
+    if lAxisRef >=GROUP_ID_START then
+      gGr = systemgroup(lAxisRef)
+      stop gGr stoptype=IMMEDIATE
+    else
+      gAx = systemaxis(lAxisRef)
+      stop gAx stoptype=IMMEDIATE
+    end if  
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponce(lSocket,seqNum,lError)
+end sub
+
+  
+' get axis current position
+public sub axPfb(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long = 0
+  dim dPfb as double = 0.0
+  try 
+    dPfb = systemaxis(lAxisRef).pfb
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponceDouble(lSocket,seqNum,lError, dPfb)
+end sub
+
+' get axis position error
+public sub axPe(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long = 0
+  dim dPfb as double = 0.0
+  try 
+    dPfb = systemaxis(lAxisRef).pe
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponceDouble(lSocket,seqNum,lError, dPfb)
+end sub
+
+' get axis position error
+public sub grPe(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long)
+  dim lError as long = 0
+  dim dPfb as double = 0.0
+  try 
+    dPfb = systemgroup(lAxisRef).pe
+  catch else
+      lError = user USR_GET_RECENT_ERROR(1,2,3)
+  end try
+      sendResponceDouble(lSocket,seqNum,lError, dPfb)
+end sub
+
+' get group current position
+public sub grPfb(byval lSocket as long,byval seqNum as long,byval  lgrRef as long)
+  dim lError as long = 0
+  dim sResp as string = ""
+  dim bVal as long = true
+  dim i as long = 1
+  dim dPfb as double
+  while bVal
+    try 
+      dPfb = systemgroup(lgrRef).j[i].pfb
+      if i > 1 then 
+        sResp = sResp + " , "
+      end if  
+      i = i + 1
+    catch 8020 '   "Variable does not exist."
+      bVal = false
+    catch else
+        lError = user USR_GET_RECENT_ERROR(1,2,3)
+    end try
+    if bVal then
+      sResp = sResp + STRD$(dPfb,"%g") 'collect all positions
+    end if  
+  end while
+      sResp  = str$(lError)+" {"+sResp+"}" ' add error
+      sendResponceString(lSocket,seqNum,sResp)
+end sub
+' get group current cartesian position
+public sub grHere(byval lSocket as long,byval seqNum as long,byval  lgrRef as long)
+  dim lError as long = 0
+  dim sResp as string = ""
+  dim bVal as long = true
+  dim i as long = 1
+  dim dPfb as double
+  while bVal
+    try 
+      dPfb = systemgroup(lgrRef).j[i].here
+      if i > 1 then 
+        sResp = sResp + " , "
+      end if  
+      i = i + 1
+    catch 8020 '   "Variable does not exist."
+      bVal = false
+    catch else
+        lError = user USR_GET_RECENT_ERROR(1,2,3)
+    end try
+    if bVal then
+      sResp = sResp + STRD$(dPfb,"%g") 'collect all positions
+    end if  
+  end while
+      sResp  = str$(lError)+" #{"+sResp+"}" ' add error
+      sendResponceString(lSocket,seqNum,sResp)
+end sub
+
+' get group current cartesian position
+public sub grSetpoint(byval lSocket as long,byval seqNum as long,byval  lgrRef as long)
+  dim lError as long = 0
+  dim sResp as string = ""
+  dim bVal as long = true
+  dim i as long = 1
+  dim dPfb as double
+  while bVal
+    try 
+      dPfb = systemgroup(lgrRef).j[i].setpoint
+      if i > 1 then 
+        sResp = sResp + " , "
+      end if  
+      i = i + 1
+    catch 8020 '   "Variable does not exist."
+      bVal = false
+    catch else
+        lError = user USR_GET_RECENT_ERROR(1,2,3)
+    end try
+    if bVal then
+      sResp = sResp + STRD$(dPfb,"%g") 'collect all positions
+    end if  
+  end while
+      sResp  = str$(lError)+" #{"+sResp+"}" ' add error
+      sendResponceString(lSocket,seqNum,sResp)
+end sub
+' get group current destination
+public sub grDest(byval lSocket as long,byval seqNum as long,byval  lgrRef as long)
+  dim lError as long = 0
+  dim sResp as string = ""
+  dim bVal as long = true
+  dim i as long = 1
+  dim dPfb as double
+  while bVal
+    try 
+      dPfb = systemgroup(lgrRef).j[i].dest
+      if i > 1 then 
+        sResp = sResp + " , "
+      end if  
+      i = i + 1
+    catch 8020 '   "Variable does not exist."
+      bVal = false
+    catch else
+        lError = user USR_GET_RECENT_ERROR(1,2,3)
+    end try
+    if bVal then
+      sResp = sResp + STRD$(dPfb,"%g") 'collect all positions
+    end if  
+  end while
+      sResp  = str$(lError)+" #{"+sResp+"}" ' add error
+      sendResponceString(lSocket,seqNum,sResp)
+end sub
+
+' get axis group ID
+public sub getId(byval lSocket as long,byval seqNum as long,byval sElementName as string)
+  dim sProperty as const string = ".elementid"
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  print getElementPropertyExpression(sElementName,sProperty)
+end sub
+
+' get any axis property
+public sub axGetProperty(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval sProperty as string)
+  dim sCommand as string
+  sCommand = "systemaxis("+str$(lAxisRef)+")."+sProperty
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  print getElementPropertyExpression("",sCommand)
+end sub
+' set any axis property
+public sub axSetProperty(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval sProperty as string, byval dValue as double)
+  dim sCommand as string
+  sCommand = "systemaxis("+str$(lAxisRef)+")."+sProperty+"="+str$(dValue)
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  print setElementPropertyExpression("",sCommand)
+end sub
+
+' get any scalar property of group
+public sub grGetProperty(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval sProperty as string)
+  dim sCommand as string
+  sCommand = "systemgroup("+str$(lAxisRef)+")."+sProperty
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  print getElementPropertyExpression("",sCommand)
+end sub
+' set any scalar property of group
+public sub grSetProperty(byval lSocket as long,byval seqNum as long,byval  lAxisRef as long,byval sProperty as string, byval dValue as double)
+  dim sCommand as string
+  sCommand = "systemgroup("+str$(lAxisRef)+")."+sProperty+"="+str$(dValue)
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  print setElementPropertyExpression("",sCommand)
+end sub
+
+' get axis group or group property
+public function getElementPropertyExpression(byval sElementName as string, byval sProperty as string) as string
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  getElementPropertyExpression = "?"+sElementName+sProperty
+end function
+' set axis group or group property
+public function setElementPropertyExpression(byval sElementName as string, byval sProperty as string) as string
+' pay attention, recursive execution. Output of this function is printed via VES and re-evaluated again
+  setElementPropertyExpression = sElementName+sProperty
+end function
+'----------------- Local functions ----------------------
+' move axis absolute or relative
+sub axMove(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long, byval dValPosition as double, byval dValVelocity as double, byval lAbs as long)
+  
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  axTarget = dValPosition
+  axVel = dValVelocity
+  axAbs  = lAbs
+  axNewTarget = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  semaphoreGive(semMove)
+end sub
+' home axis
+sub axHome(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long)
+  
+  dim gA as generic axis 
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  axNewHome = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  gA = systemaxis(axRef)
+  CAN_SLAVE_HOME_DS402(gA,100)
+  semaphoreGive(semMove)
+end sub
+' move group inner function
+sub grMove(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long, byval dXPos as double, byval dYPos as double,byval dZPos as double,byval dValVelocity as double, byval lAbs as long)
+  
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  grTarget[1] = dxPos
+  grTarget[2] = dYPos
+  grTarget[3] = dZPos
+  grVel = dValVelocity
+  grAbs  = lAbs
+  grMoveType = 2
+  grNewTarget = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  semaphoreGive(semMove)
+end sub
+
+' move Robot 4 dof inner
+sub grMove4df(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dValVelocity as double, byval lAbs as long, byval lType as long) ' type move (2), moves (3)
+  
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  grTarget[1] = dj1
+  grTarget[2] = dj2
+  grTarget[3] = dj3
+  grTarget[4] = dj4
+  
+  grVel = dValVelocity
+  grAbs  = lAbs
+  grMoveType = lType
+  grNewTarget = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  semaphoreGive(semMove)
+end sub
+
+' move Robot 5 dof inner
+sub grMove5df(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,byval dj5 as double,\
+byval dValVelocity as double, byval lAbs as long, byval lType as long) ' type move (2), moves (3)
+  
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  grTarget[1] = dj1
+  grTarget[2] = dj2
+  grTarget[3] = dj3
+  grTarget[4] = dj4
+  grTarget[5] = dj5
+  
+  grVel = dValVelocity
+  grAbs  = lAbs
+  grMoveType = lType
+  grNewTarget = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  semaphoreGive(semMove)
+end sub
+
+' move Robot 6 dof inner
+sub grMove6df(byval lSocket as long, byval seqNum as long, byval  lAxisRef as long, \
+byval dj1 as double, byval dj2 as double,byval dj3 as double,byval dj4 as double,\
+byval dj5 as double, byval dj6 as double,\
+byval dValVelocity as double, byval lAbs as long,byval lType as long) ' type move car (2), moves car (3), type move jnt (4), moves jnt (5)
+  
+' aquire motion semaphore
+  while semaphoreTake(semMove, 100) = 0 
+    sleep 1
+  end while
+  axSeq = seqNum
+  axRef = lAxisRef
+  grTarget[1] = dj1
+  grTarget[2] = dj2
+  grTarget[3] = dj3
+  grTarget[4] = dj4
+  grTarget[5] = dj5
+  grTarget[6] = dj6
+  
+  grVel = dValVelocity
+  grAbs  = lAbs
+  grMoveType = lType
+  grNewTarget = 1
+  axRespFileDesc = lSocket
+' start a new motion
+  semaphoreGive(semMove)
+end sub
