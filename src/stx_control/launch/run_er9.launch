@@ -12,8 +12,5 @@
         <param name="MC-IP" value="132.68.161.26" />
     </node>
 
-    <node name="stx_ebutton_publisher" pkg="stx_control" type="stx_ebutton_publisher_TCP.py" output="screen" launch-prefix="bash -c 'sleep 2; $0 $@' ">
-        <param name="MC-IP" value="132.68.161.26" />
-    </node>
 
 </launch>
