@@ -59,7 +59,9 @@
 
  - Staring the ROS system with the 'er9' robot connected:
  
-        roslaunch stx_control run_er9.launch 
+        roslaunch stx_control run_er9.launch mc_ip:=132.68.161.26
+
+Where 132.68.161.26 is the IP of the mc. There is also an option to change the default value of mc\_ip in src/stx_control/launch/run_er9.launch in which case you do not need to enter a value externally
  
  - In case a robot is not connected we provide a 'simulation' mod which can be started by executing:
  
@@ -90,15 +92,30 @@
 If the robot has been turn off during movement execution or suffered from a different kind of unexpected
 error and now is not compatible with the 'Rviz' simulation we wil need to do manual 'Homing'.
 
+The Homing position of the robot is illustrated in the following image
+![image](home_position.jpg)
+
+There are two ways to home the robot arm. 
+
+ ### First option
+
+ - Move the robot manually to the home position
+ - Execute in a new terminal window the command (make sure to be in 'stxros' directory):
+
+        python src/stx_control/scripts/er9_zeroing.py --mc_ip=132.68.161.26
+ ### Second option
+
  - Execute in a new terminal window the command (make sure to be in 'stxros' directory):
  
-        python src/stx_control/scripts/GUI_homing.py
+        python src/stx_control/scripts/er9_gui_homing.py --mc_ip=132.68.161.26
+or for the non-gui version:
+        python src/stx_control/scripts/er9_cmd_homing.py --mc_ip=132.68.161.26
   
   When the controller appears you will need to move each joint to the 'Home' position and after press 'Set joint!.
  
  Once all the joints are set we can quit the homing controller and start planing.
 
-
+  
 
     
   #### _**Additional control tips:**_
@@ -108,7 +125,7 @@ error and now is not compatible with the 'Rviz' simulation we wil need to do man
     
      - To change robot maximum speed edit the 'value' which is followed by the 'ROBOT-SPEED' parameter. (default is 15)
     
-    -  To change MC IP edit the 'value' which is followed by the 'MC-IP' parameter. (default is 90.0.0.1)
+    -  To change MC IP edit the 'default' which is followed by the 'MC-IP' parameter. (default is 90.0.0.1)
     
 - _Gripper control:_
 
