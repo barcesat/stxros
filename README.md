@@ -33,7 +33,7 @@
  
  Clone the repository to the folder by executing the following command:
  
-     git clone https://github.com/servotronix/stxros.git
+     git clone https://github.com/barcesat/stxros.git
  
  Next Enter 'stxros' folder, open the terminal and execute:
     
