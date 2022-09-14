@@ -29,20 +29,14 @@
  - Moveit! installation : https://moveit.ros.org/install/
  - TRAC-IK Kinematics Solver installation : http://docs.ros.org/kinetic/api/moveit_tutorials/html/doc/trac_ik/trac_ik_tutorial.html
  
- After installing the above create a new folder for the project like so (using a terminal):
-
-      mkdir ~/stxros_ws
-      mkdir ~/stxros_ws/src
-      cd ~/stxros_ws/src
-
-  
- Clone the repository to the folder by executing the following command:
+ Clone the repository to the folder by executing the following commands in a terminal:
  
+     cd ~
      git clone https://github.com/barcesat/stxros.git
  
- Next open the terminal, enter 'stxros_ws' folder and build the project by executing:
+ Next open the terminal, enter 'stxros' folder and build the project by executing:
 
-     cd ~/stxros_ws 
+     cd ~/stxros 
      source /opt/ros/kinetic/setup.bash
      catkin_make
      source devel/setup.bash
@@ -51,9 +45,9 @@
  
  In the '.bashrc' file add the following line:
  
-    source ~/stxros_ws/devel/setup.bash
+    source ~/stxros/devel/setup.bash
  
- _Note: the path to setup.bash is the absolute path to the 'setup.bash' file which located under 'devel' folder in your project. In this example it is ~/stxros_ws/devel/setup.bash_
+ _Note: the path to setup.bash is the absolute path to the 'setup.bash' file which located under 'devel' folder in your project. In this example it is ~/stxros/devel/setup.bash_
  
 ## **Starting the system**
 
@@ -61,7 +55,7 @@
 
  In order to start the robot movement you need to execute the following in your terminal window:
  
- - Make sure to be in the workspace directory. ('stxros_ws')
+ - Make sure to be in the workspace directory. ('stxros')
 
  - Staring the ROS system with the 'er9' robot connected:
  
@@ -103,31 +97,37 @@ There are two ways to home the robot arm.
 
  #### First option
 
- - Manuall move the robot to the home position
- - Execute in a new terminal window the command (make sure to be in 'stxros' directory):
+ - Manually move the robot to the home position
+ - Execute in a new terminal window the command:
 
-        python src/stx_control/scripts/er9_zeroing.py --mc_ip=132.68.161.26
+        python ~/stxros/src/stx_control/scripts/er9_zeroing.py --mc_ip=132.68.161.26
+ - When the script has finished running turn the off main power to the mc and after a few seconds on again. 
  #### Second option
 
- - Execute in a new terminal window the command (make sure to be in 'stxros' directory):
+ - Execute in a new terminal window the command:
  
-        python src/stx_control/scripts/er9_gui_homing.py --mc_ip=132.68.161.26
+        python ~/stxros/src/stx_control/scripts/er9_gui_homing.py --mc_ip=132.68.161.26
  - or for the non-gui version:
 
-        python src/stx_control/scripts/er9_cmd_homing.py --mc_ip=132.68.161.26
+        python ~/stxros/src/stx_control/scripts/er9_cmd_homing.py --mc_ip=132.68.161.26
   
   When the controller appears you will need to move each joint to the 'Home' position and after press 'Set joint!.
- 
+
+  In order to check that the homing has been successful check the new joint values by running the following script:
+
+         python ~/stxros/src/stx_control/scripts/er9_print_angles.py --mc_ip=132.68.161.26
+Check to see that the values are close to zero. In order to stop the script use 'Ctrl + c'
+
  Once all the joints are set we can quit the homing controller and start planning.
     
   #### _**Additional control tips:**_
 - _Speed and IP setup:_
 
-    The robot's actuators maximum movement speed and the MC-IP address are tunable and easy to change by editing the 'run_er9.launch' file.
+    The robot's actuators maximum movement speed and the mc_ip address are tunable and easy to change by editing the 'run_er9.launch' file.
     
      - To change robot maximum speed edit the 'value' which is followed by the 'ROBOT-SPEED' parameter. (default is 15)
     
-    -  To change MC IP edit the 'default' which is followed by the 'MC-IP' parameter. (default is 90.0.0.1)
+    -  To change MC IP edit the 'default' which is followed by the 'mc_ip' parameter. (default is 90.0.0.1)
     
 - _Gripper control:_
 
@@ -138,6 +138,16 @@ There are two ways to home the robot arm.
    After, press the 'Update' button and you are ready to execute the command with 'Plan and Execute'
    button.
  
+- _Helper scripts:_
+
+   There are two scripts that communicate directly with the mc without using ROS. They may be useful for debugging issues.
+
+   - The first script prints the angle values and can be run in the terminal using the following command. To stop the script use 'Ctrl + c':
+ 
+         python ~/stxros/src/stx_control/scripts/er9_print_angles.py --mc_ip=132.68.161.26
+
+   - The second script moves the motors. It is an interactive script and can be launch with the following command. Again to top the script use 'Ctrl + c:
+         python ~/stxros/src/stx_control/scripts/er9_cmd_move.py --mc_ip=132.68.161.26
  
 - _Exit the system:_
 
