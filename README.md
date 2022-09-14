@@ -147,6 +147,7 @@ There are two ways to home the robot arm.
          python ~/stxros/src/stx_control/scripts/er9_print_angles.py --mc_ip=132.68.161.26
 
    - The second script moves the motors. It is an interactive script and can be launch with the following command. In order to stop the script use 'Ctrl + c:
+
          python ~/stxros/src/stx_control/scripts/er9_cmd_move.py --mc_ip=132.68.161.26
 - _Exit the system:_
 
