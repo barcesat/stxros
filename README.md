@@ -116,7 +116,7 @@ There are two ways to home the robot arm.
   In order to check that the homing has been successful check the new joint values by running the following script:
 
          python ~/stxros/src/stx_control/scripts/er9_print_angles.py --mc_ip=132.68.161.26
-Check to see that the values are close to zero. In order to stop the script use 'Ctrl + c'
+ Check to see that the values are close to zero. In order to stop the script use 'Ctrl + c'
 
  Once all the joints are set we can quit the homing controller and start planning.
     
@@ -146,9 +146,8 @@ Check to see that the values are close to zero. In order to stop the script use 
  
          python ~/stxros/src/stx_control/scripts/er9_print_angles.py --mc_ip=132.68.161.26
 
-   - The second script moves the motors. It is an interactive script and can be launch with the following command. Again to top the script use 'Ctrl + c:
+   - The second script moves the motors. It is an interactive script and can be launch with the following command. In order to stop the script use 'Ctrl + c:
          python ~/stxros/src/stx_control/scripts/er9_cmd_move.py --mc_ip=132.68.161.26
- 
 - _Exit the system:_
 
     press 'Ctrl + c' on terminal window.
